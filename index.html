@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>خطة الـ 100% - المساعد الذكي للأطفال</title>
+    <title>خطة الـ 100% - أطفال (Pediatrics)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
@@ -22,21 +22,28 @@
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #2563eb; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* تصميم زر التكرار المتباعد */
-        .hard-btn.active { color: #ef4444; background-color: #fee2e2; border-color: #ef4444; }
+        /* وضع التركيز العميق (Zen Mode) */
+        #zen-mode-overlay { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: linear-gradient(135deg, #1e293b, #0f172a); 
+            z-index: 2000; flex-direction: column; justify-content: center; align-items: center; color: white;
+            transition: opacity 0.5s ease;
+        }
+        .zen-clock { font-size: 8rem; font-weight: bold; font-family: 'Courier New', Courier, monospace; text-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        @media (max-width: 768px) { .zen-clock { font-size: 5rem; } }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
     <div id="loading-overlay">
         <div class="spinner mb-4"></div>
-        <p class="text-blue-600 font-bold" id="loading-text">جاري الاتصال بالنظام الذكي...</p>
+        <p class="text-blue-600 font-bold" id="loading-text">جاري إعداد بيئة الدراسة...</p>
     </div>
 
     <div id="login-section" class="max-w-md mx-auto mt-20 bg-white p-8 rounded-2xl shadow-xl text-center border-t-4 border-blue-600" style="display: none;">
-        <div class="mb-6 text-blue-600 text-5xl"><i class="fas fa-brain"></i></div>
-        <h2 class="text-2xl font-bold mb-2 text-gray-800">المساعد الدراسي الذكي</h2>
-        <p class="text-gray-500 mb-8 text-sm">سجل دخولك لتفعيل خوارزميات التكرار المتباعد ومؤقت بومودورو وحفظ تقدمك سحابياً.</p>
+        <div class="mb-6 text-blue-600 text-5xl"><i class="fas fa-user-md"></i></div>
+        <h2 class="text-2xl font-bold mb-2 text-gray-800">خطة الـ 100% - الأطفال</h2>
+        <p class="text-gray-500 mb-8 text-sm">سجل دخولك لمتابعة خطتك، استخدام وضع التركيز العميق، والمستشار الذكي.</p>
         
         <button onclick="loginWithGoogle()" class="w-full bg-white hover:bg-gray-50 text-gray-800 font-bold py-3 px-4 rounded-lg shadow border border-gray-300 flex justify-center items-center gap-3 transition-colors">
             <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" class="w-5 h-5">
@@ -53,54 +60,76 @@
                 <img id="user-photo" src="" class="w-8 h-8 rounded-full border border-white">
                 <span id="display-name" class="font-semibold"></span>
             </div>
-            <h1 class="text-3xl font-bold mb-2"><i class="fas fa-stethoscope ml-2"></i> خطة الـ 100% - الأطفال</h1>
+            <h1 class="text-3xl font-bold mb-2"><i class="fas fa-stethoscope ml-2"></i> خطة الـ 10 أيام - Pediatrics</h1>
+            <p class="text-blue-100 text-lg">نظام (3-4-2) للعلامة الكاملة</p>
             
-            <div class="flex justify-center gap-6 mt-4 text-sm border-t border-blue-500 pt-4 pb-2">
-                <div class="flex flex-col items-center"><i class="fas fa-clock text-xl text-yellow-300 mb-1"></i><span><span id="stat-hours" class="font-bold text-lg">0</span> ساعة دراسة</span></div>
-                <div class="flex flex-col items-center"><i class="fas fa-fire text-xl text-red-300 mb-1"></i><span><span id="stat-hard" class="font-bold text-lg">0</span> مهام للمراجعة</span></div>
-            </div>
-
-            <div class="mt-4 bg-blue-800 rounded-full h-4 w-full overflow-hidden">
+            <div class="mt-6 bg-blue-800 rounded-full h-4 w-full overflow-hidden">
                 <div id="progress-fill" class="bg-green-400 h-full w-0 rounded-full"></div>
             </div>
             <p class="mt-2 text-sm font-semibold" id="progress-text">نسبة الإنجاز الكلية: 0%</p>
-            <p class="mt-1 text-xs text-green-200 h-4" id="save-status"></p>
         </header>
 
-        <div id="smart-review-container" class="mb-8" style="display: none;">
-            <div class="bg-red-50 rounded-xl shadow-md p-6 border-t-4 border-red-500">
-                <div class="flex items-center gap-2 border-b border-red-200 pb-3 mb-4">
-                    <i class="fas fa-brain text-red-500 text-2xl"></i>
-                    <h2 class="text-xl font-bold text-red-800">التكرار المتباعد: مهام تحتاج تركيزك</h2>
-                </div>
-                <div id="smart-review-list" class="space-y-2">
-                    </div>
+        <div class="bg-white rounded-xl shadow-md p-6 mb-8 border-r-4 border-indigo-500">
+            <div class="flex items-center gap-2 mb-4 text-indigo-700">
+                <i class="fas fa-robot text-2xl"></i>
+                <h2 class="text-xl font-bold">المستشار الدراسي الذكي</h2>
             </div>
+            <p class="text-sm text-gray-600 mb-3">كيف يسير يومك الدراسي؟ هل واجهت صعوبة في موضوع معين اليوم؟</p>
+            <textarea id="ai-input" rows="2" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-800 mb-3" placeholder="مثال: واجهت صعوبة في حفظ خوارزمية الـ NRP اليوم..."></textarea>
+            <button onclick="analyzeProgress()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition-colors text-sm flex items-center gap-2">
+                <i class="fas fa-magic"></i> تحليل وإعطاء نصيحة
+            </button>
+            <div id="ai-response" class="mt-4 p-4 bg-indigo-50 rounded-lg text-indigo-800 text-sm hidden border border-indigo-100 leading-relaxed"></div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="days-container"></div>
         
         <div class="mt-8 flex justify-center gap-4 mb-10">
             <button onclick="resetProgress()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg transition-colors shadow-md text-sm">
-                <i class="fas fa-undo ml-2"></i> تصفير البيانات
+                <i class="fas fa-undo ml-2"></i> إعادة ضبط الخطة
             </button>
         </div>
     </div>
 
-    <div id="pomodoro-bar" class="fixed bottom-0 left-0 w-full bg-slate-800 text-white p-3 flex justify-between items-center shadow-2xl z-50 transition-colors duration-500" style="display: none;">
+    <div id="pomodoro-bar" class="fixed bottom-0 left-0 w-full bg-slate-800 text-white p-3 flex justify-between items-center shadow-2xl z-50 cursor-pointer hover:bg-slate-700 transition-colors" onclick="openZenMode()" style="display: none;">
         <div class="flex items-center gap-3">
-            <div class="bg-slate-900 rounded-lg px-3 py-1 border border-slate-700">
-                <span id="timer-display" class="text-2xl font-mono font-bold tracking-wider">50:00</span>
-            </div>
-            <span id="timer-mode" class="text-xs bg-blue-500 font-bold px-2 py-1 rounded animate-pulse">جلسة تركيز</span>
+            <i class="fas fa-expand text-gray-400"></i>
+            <span class="font-bold">فتح وضع التركيز العميق (Zen Mode)</span>
         </div>
-        <div class="flex items-center gap-2">
-            <button onclick="toggleTimer()" id="timer-btn" class="bg-green-500 hover:bg-green-600 text-white w-10 h-10 rounded-full flex justify-center items-center transition-transform hover:scale-105 shadow-lg">
-                <i class="fas fa-play" id="timer-icon"></i>
+        <div class="text-xl font-mono font-bold" id="mini-timer">50:00</div>
+    </div>
+
+    <div id="zen-mode-overlay">
+        <button onclick="closeZenMode(event)" class="absolute top-8 right-8 text-white hover:text-red-400 text-4xl transition-colors">
+            <i class="fas fa-times"></i>
+        </button>
+        
+        <div class="text-center mb-10">
+            <h2 class="text-2xl font-light text-gray-300 mb-2" id="zen-status">جلسة تركيز عميق</h2>
+            <div class="zen-clock" id="zen-timer">50:00</div>
+        </div>
+
+        <div class="flex gap-6 mb-12">
+            <button onclick="toggleZenTimer(event)" id="zen-play-btn" class="w-20 h-20 bg-blue-600 hover:bg-blue-500 rounded-full flex justify-center items-center text-3xl shadow-[0_0_20px_rgba(37,99,235,0.5)] transition-all transform hover:scale-105">
+                <i class="fas fa-play ml-1" id="zen-icon"></i>
             </button>
-            <button onclick="resetTimer()" class="bg-slate-600 hover:bg-slate-500 text-white w-10 h-10 rounded-full flex justify-center items-center transition-colors">
-                <i class="fas fa-sync-alt text-sm"></i>
+            <button onclick="resetZenTimer(event)" class="w-20 h-20 bg-slate-700 hover:bg-slate-600 rounded-full flex justify-center items-center text-2xl transition-all">
+                <i class="fas fa-sync-alt"></i>
             </button>
+        </div>
+
+        <div class="bg-slate-800/50 p-6 rounded-2xl backdrop-blur-md border border-slate-700 flex flex-col items-center">
+            <div class="flex items-center gap-3 mb-4">
+                <i class="fas fa-headphones-alt text-xl text-blue-400"></i>
+                <span class="font-semibold text-lg">الأصوات المحفزة للدراسة</span>
+            </div>
+            <select id="audio-selector" onchange="changeAudio(event)" class="bg-slate-900 border border-slate-600 text-white rounded-lg p-3 w-64 focus:outline-none focus:border-blue-500">
+                <option value="none">بدون صوت</option>
+                <option value="https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg">🌧️ صوت المطر</option>
+                <option value="https://actions.google.com/sounds/v1/water/waves_crashing_on_rock_beach.ogg">🌊 أمواج البحر (White Noise)</option>
+                <option value="https://actions.google.com/sounds/v1/nature/forest_with_small_river.ogg">🌲 أجواء الغابة والنهر</option>
+            </select>
+            <audio id="bg-audio" loop></audio>
         </div>
     </div>
 
@@ -119,36 +148,104 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
+        // الخطة المحدثة والمفصلة (3-4-2)
         const planData = [
-            { date: "اليوم 1", title: "حجر الأساس", tasks: ["Growth, Nutrition, Vaccines", "General Principles & Psychiatry", "حل نموذج مصغر"] },
-            { date: "اليوم 2", title: "حديثي الولادة", tasks: ["NRP, RDS, Jaundice, Sepsis", "Pregnancy & Childbirth", "حل 20 سؤال CMS"] },
-            { date: "اليوم 3", title: "الأمراض المعدية", tasks: ["Meningitis, Exanthems, Kawasaki", "Infectious Diseases", "مراجعة التطعيمات والـ Milestones"] },
-            { date: "اليوم 4", title: "التنفسي والقلب", tasks: ["Asthma, Bronchiolitis, CHD", "Pulmonary & Cardiovascular", "حل 20 سؤال CMS"] },
-            { date: "اليوم 5", title: "الجهاز الهضمي", tasks: ["Dehydration, Intussusception", "Gastrointestinal & Nutrition", "حسابات السوائل (Maintenance)"] },
-            { date: "اليوم 6", title: "الأعصاب والنفسية", tasks: ["Seizures, CP, Autism", "Nervous System", "حل 20 سؤال CMS"] },
-            { date: "اليوم 7", title: "الدم والأورام", tasks: ["Anemias, Bleeding, Leukemia", "Hematology & Oncology", "خوارزميات الـ Anemia"] },
-            { date: "اليوم 8", title: "الكلى والغدد", tasks: ["Nephritic, UTI, DKA", "Renal, Endocrine & Genetics", "حل 20 سؤال CMS"] },
-            { date: "اليوم 9", title: "المحاكاة الشاملة", tasks: ["UWorld Timed: Select ALL", "نموذج CMS كامل", "مراجعة أخطاء الـ CMS"] },
-            { date: "اليوم 10", title: "يوم الطوارئ", tasks: ["مراجعة سريعة للصور (X-rays)", "مراجعة القوانين والجرعات", "النوم مبكراً"] }
+            { 
+                date: "اليوم 1 (22/3)", title: "حجر الأساس والوقاية", 
+                tasks: [
+                    "3 ساعات (UW Notes): Growth & Dev (الـ Milestones)، Nutrition، Vaccines، Child Abuse.",
+                    "4 ساعات (UWorld): Tutor/Unused - اختر General Principles و Psychiatry/Psychology.",
+                    "ساعتان مراجعة: حل 20 سؤال CMS أطفال قديم."
+                ] 
+            },
+            { 
+                date: "اليوم 2 (23/3)", title: "حديثي الولادة (أهم يوم)", 
+                tasks: [
+                    "3 ساعات (UW Notes): خوارزمية NRP، RDS vs TTN vs MAS، Jaundice (متى ضوء/تغيير دم)، Sepsis.",
+                    "4 ساعات (UWorld): Tutor/Unused - اختر Pregnancy, Childbirth & Puerperium.",
+                    "ساعتان مراجعة: التركيز على Jaundice Charts وحل أخطاء اليوم."
+                ] 
+            },
+            { 
+                date: "اليوم 3 (24/3)", title: "الأمراض المعدية", 
+                tasks: [
+                    "3 ساعات (UW Notes): Meningitis (تحليل CSF)، Viral Exanthems (شكل الطفح)، Kawasaki (معايير 5)، Bone infections.",
+                    "4 ساعات (UWorld): Tutor/Unused - اختر Infectious Diseases.",
+                    "ساعتان مراجعة: حل 20 سؤال CMS إضافي."
+                ] 
+            },
+            { 
+                date: "اليوم 4 (25/3)", title: "التنفسي والقلب", 
+                tasks: [
+                    "3 ساعات (UW Notes): Asthma, Bronchiolitis, Croup, Epiglottitis, CF | CHD (Cyanotic vs Acyanotic).",
+                    "4 ساعات (UWorld): Tutor/Unused - اختر Pulmonary & Critical Care و Cardiovascular.",
+                    "ساعتان مراجعة: مراجعة أصوات القلب (Murmurs) وأخطاء اليوم."
+                ] 
+            },
+            { 
+                date: "اليوم 5 (26/3)", title: "الجهاز الهضمي والتغذية", 
+                tasks: [
+                    "3 ساعات (UW Notes): Dehydration (حساب Deficit والسوائل)، Intussusception, Pyloric Stenosis, Hirschsprung.",
+                    "4 ساعات (UWorld): Tutor/Unused - اختر Gastrointestinal & Nutrition.",
+                    "ساعتان مراجعة: التدرب بورقة وقلم على مسائل السوائل (Maintenance & Deficit)."
+                ] 
+            },
+            { 
+                date: "اليوم 6 (27/3)", title: "الأعصاب والطب النفسي", 
+                tasks: [
+                    "3 ساعات (UW Notes): Seizures (Febrile vs Spasms)، CP، Neurocutaneous Syndromes، ADHD، Autism.",
+                    "4 ساعات (UWorld): Tutor/Unused - اختر Nervous System.",
+                    "ساعتان مراجعة: حل 20 سؤال CMS."
+                ] 
+            },
+            { 
+                date: "اليوم 7 (28/3)", title: "الدم والأورام والمناعة", 
+                tasks: [
+                    "3 ساعات (UW Notes): Anemias (الحديد vs ثلاسيميا)، Bleeding، Oncology (ALL, Wilms)، Immunodeficiencies.",
+                    "4 ساعات (UWorld): Tutor/Unused - اختر Hematology/Oncology و Immunology.",
+                    "ساعتان مراجعة: مراجعة صور خلايا الدم (Blood Film) من UWorld."
+                ] 
+            },
+            { 
+                date: "اليوم 8 (29/3)", title: "الكلى، الغدد، الجينات", 
+                tasks: [
+                    "3 ساعات (UW Notes): Nephrotic vs Nephritic, UTI | DKA (علاج طارئ)، Hypothyroidism | Down, Turner, Marfan.",
+                    "4 ساعات (UWorld): Tutor/Unused - اختر Renal, Endocrine و Genetics.",
+                    "ساعتان مراجعة: حل 20 سؤال CMS."
+                ] 
+            },
+            { 
+                date: "اليوم 9 (30/3)", title: "يوم المحاكاة الشاملة", 
+                tasks: [
+                    "المهمة 1 (ساعتان): حل 40 سؤال Incorrects من UWorld (Timed - جميع الأنظمة).",
+                    "المهمة 2 (ساعتان): حل نموذج CMS أطفال كامل (50 سؤال) تحت ضغط الوقت.",
+                    "المهمة 3 (الباقي): مراجعة الإجابات الخاطئة من CMS وأسئلة اليوم."
+                ] 
+            },
+            { 
+                date: "اليوم 10 (31/3)", title: "اللمسات الأخيرة (قبل الامتحان)", 
+                tasks: [
+                    "الصباح (3 ساعات): مراجعة سريعة للجداول والخوارزميات المعقدة.",
+                    "الظهر (ساعتان): تصفح سريع لجميع الصور (Images/Flashcards) في UWorld.",
+                    "المساء: راجع القوانين البسيطة (سوائل، APGAR) ونام مبكراً (8 ساعات) لصفاء الذهن."
+                ] 
+            }
         ];
 
         let currentUser = null;
         let taskState = {};
-        let hardTasks = {}; // الخوارزمية الجديدة
-        let totalStudyMinutes = 0; // الخوارزمية الجديدة
-        let saveTimeout = null;
-
-        // متغيرات مؤقت بومودورو
+        
+        // متغيرات وضع Zen
         let timerInterval;
-        let timeLeft = 50 * 60; // 50 دقيقة
+        let timeLeft = 50 * 60; 
         let isTimerRunning = false;
         let isStudySession = true;
+        const bgAudio = document.getElementById('bg-audio');
 
         auth.onAuthStateChanged(user => {
             if (user) {
                 currentUser = user;
                 document.getElementById('display-name').innerText = user.displayName || user.email;
-                document.getElementById('user-photo').src = user.photoURL || 'https://via.placeholder.com/150';
                 document.getElementById('login-section').style.display = 'none';
                 loadUserData(user.uid);
             } else {
@@ -162,38 +259,28 @@
 
         function loginWithGoogle() {
             document.getElementById('loading-overlay').style.display = 'flex';
-            document.getElementById('loading-text').innerText = "جاري فتح نافذة الذكاء الاصطناعي...";
             const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).catch(error => {
-                alert("تعذر فتح نافذة تسجيل الدخول. يرجى التأكد من عدم حظر النوافذ المنبثقة.");
+            auth.signInWithPopup(provider).catch(e => {
+                alert("يرجى التأكد من عدم حظر النوافذ المنبثقة.");
                 document.getElementById('loading-overlay').style.display = 'none';
             });
         }
 
         async function loadUserData(userId) {
             document.getElementById('loading-overlay').style.display = 'flex';
-            document.getElementById('loading-text').innerText = "جاري مزامنة بياناتك وتحليل أدائك...";
             try {
                 const doc = await db.collection("users").doc(userId).get();
-                if (doc.exists) {
-                    const data = doc.data();
-                    taskState = data.tasks || {};
-                    hardTasks = data.hardTasks || {};
-                    totalStudyMinutes = data.studyMinutes || 0;
-                }
-            } catch (error) {
-                console.error(error);
-            } finally {
+                if (doc.exists) { taskState = doc.data().tasks || {}; }
+            } catch (error) {} 
+            finally {
                 renderDays();
                 updateProgress();
-                updateStatsUI();
                 document.getElementById('main-content').style.display = 'block';
                 document.getElementById('pomodoro-bar').style.display = 'flex';
                 document.getElementById('loading-overlay').style.display = 'none';
             }
         }
 
-        // بناء واجهة المهام وإضافة زر "التكرار المتباعد"
         function renderDays() {
             const container = document.getElementById('days-container');
             container.innerHTML = ''; 
@@ -204,67 +291,18 @@
                 day.tasks.forEach((task, taskIndex) => {
                     const taskId = `day${dayIndex}_task${taskIndex}`;
                     const isChecked = taskState[taskId] ? 'checked' : '';
-                    const isHard = hardTasks[taskId] ? 'active' : 'text-gray-300 border-gray-200';
-                    
                     tasksHtml += `
-                        <div class="flex items-center justify-between border-b border-gray-100 last:border-0 p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                            <label class="flex items-start gap-3 cursor-pointer relative flex-1">
-                                <div class="mt-1 relative flex-shrink-0">
-                                    <input type="checkbox" class="task-checkbox appearance-none w-6 h-6 border-2 border-gray-300 rounded-md checked:bg-green-500 checked:border-green-500 transition-colors cursor-pointer" 
-                                           id="${taskId}" ${isChecked} onchange="toggleTask('${taskId}')">
-                                    <i class="fas fa-check text-white absolute top-1 right-1 text-sm pointer-events-none check-icon ${isChecked ? 'block' : 'hidden'}"></i>
-                                </div>
-                                <div class="text-gray-700 font-medium text-sm md:text-base ${isChecked ? 'line-through text-gray-400' : ''}" id="text_${taskId}">${task}</div>
-                            </label>
-                            
-                            <button onclick="toggleHardTask('${taskId}', '${task}')" title="تحديد كمهمة صعبة للمراجعة" 
-                                    class="hard-btn ${isHard} ml-2 p-2 rounded-full border hover:bg-red-50 transition-colors flex-shrink-0" id="btn_hard_${taskId}">
-                                <i class="fas fa-fire"></i>
-                            </button>
-                        </div>`;
+                        <label class="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer border-b border-gray-100 last:border-0 relative">
+                            <div class="mt-1 relative flex-shrink-0">
+                                <input type="checkbox" class="task-checkbox appearance-none w-6 h-6 border-2 border-gray-300 rounded-md checked:bg-green-500 checked:border-green-500 transition-colors cursor-pointer" 
+                                       id="${taskId}" ${isChecked} onchange="toggleTask('${taskId}')">
+                                <i class="fas fa-check text-white absolute top-1 right-1 text-sm pointer-events-none check-icon ${isChecked ? 'block' : 'hidden'}"></i>
+                            </div>
+                            <div class="text-gray-700 font-medium text-sm leading-relaxed ${isChecked ? 'line-through text-gray-400' : ''}" id="text_${taskId}">${task}</div>
+                        </label>`;
                 });
                 dayCard.innerHTML = `<div class="flex justify-between items-center border-b pb-3 mb-4"><h2 class="text-xl font-bold text-gray-800">${day.date}</h2><span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">${day.title}</span></div><div class="space-y-1">${tasksHtml}</div>`;
                 container.appendChild(dayCard);
-            });
-            
-            renderSmartReview();
-        }
-
-        // دالة التكرار المتباعد
-        function toggleHardTask(taskId, taskText) {
-            const btn = document.getElementById(`btn_hard_${taskId}`);
-            if (hardTasks[taskId]) {
-                delete hardTasks[taskId];
-                btn.className = "hard-btn text-gray-300 border-gray-200 ml-2 p-2 rounded-full border hover:bg-red-50 transition-colors flex-shrink-0";
-            } else {
-                hardTasks[taskId] = taskText;
-                btn.className = "hard-btn active ml-2 p-2 rounded-full border hover:bg-red-50 transition-colors flex-shrink-0";
-            }
-            renderSmartReview();
-            updateStatsUI();
-            saveToFirestore();
-        }
-
-        // بناء صندوق المراجعة الذكية
-        function renderSmartReview() {
-            const container = document.getElementById('smart-review-container');
-            const list = document.getElementById('smart-review-list');
-            list.innerHTML = '';
-            
-            const hardTaskKeys = Object.keys(hardTasks);
-            
-            if (hardTaskKeys.length === 0) {
-                container.style.display = 'none';
-                return;
-            }
-            
-            container.style.display = 'block';
-            hardTaskKeys.forEach(key => {
-                list.innerHTML += `
-                    <div class="flex items-center gap-2 text-sm text-red-700 bg-white p-2 rounded border border-red-100">
-                        <i class="fas fa-exclamation-circle text-red-400"></i>
-                        <span>${hardTasks[key]}</span>
-                    </div>`;
             });
         }
 
@@ -272,10 +310,9 @@
             const checkbox = document.getElementById(taskId);
             const textElement = document.getElementById(`text_${taskId}`);
             taskState[taskId] = checkbox.checked;
-            if (checkbox.checked) { textElement.classList.add('line-through', 'text-gray-400'); } 
-            else { textElement.classList.remove('line-through', 'text-gray-400'); }
+            checkbox.checked ? textElement.classList.add('line-through', 'text-gray-400') : textElement.classList.remove('line-through', 'text-gray-400');
             updateProgress();
-            saveToFirestore();
+            if(currentUser) db.collection("users").doc(currentUser.uid).set({ tasks: taskState }, { merge: true });
         }
 
         function updateProgress() {
@@ -285,104 +322,143 @@
             document.getElementById('progress-fill').style.width = `${percentage}%`;
             document.getElementById('progress-text').innerText = `نسبة الإنجاز: ${percentage}%`;
         }
-        
-        function updateStatsUI() {
-            const hours = (totalStudyMinutes / 60).toFixed(1);
-            document.getElementById('stat-hours').innerText = hours;
-            document.getElementById('stat-hard').innerText = Object.keys(hardTasks).length;
+
+        // --- نظام الذكاء الاصطناعي المبسط ---
+        function analyzeProgress() {
+            const input = document.getElementById('ai-input').value.trim();
+            const responseDiv = document.getElementById('ai-response');
+            
+            if(!input) {
+                alert("يرجى كتابة شيء ليقوم المستشار بتحليله.");
+                return;
+            }
+
+            responseDiv.classList.remove('hidden');
+            responseDiv.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> جاري تحليل بياناتك...';
+
+            setTimeout(() => {
+                let response = "";
+                const text = input.toLowerCase();
+                
+                if (text.includes("تعب") || text.includes("مرهق") || text.includes("وقت")) {
+                    response = "<b><i class='fas fa-info-circle'></i> نصيحة المستشار:</b> الشعور بالتعب طبيعي جداً في هذه المرحلة. تذكر قاعدتنا في اليوم العاشر: <b>النوم 8 ساعات أهم من حفظ معلومة جديدة</b>. خذ استراحة لمدة 15 دقيقة الآن، وابتعد عن الشاشات تماماً لتهيئة ذهنك.";
+                } else if (text.includes("uworld") || text.includes("خطأ") || text.includes("غلط") || text.includes("اسئلة")) {
+                    response = "<b><i class='fas fa-lightbulb'></i> استراتيجية ذكية:</b> الأخطاء في UWorld هي فرصتك للعلامة الكاملة. لا تحبط! ركز على قراءة <b>الـ Educational Objective</b> في أسفل التفسير، ولا تنسَ إضافة الأسئلة الصعبة لـ Flashcards لمراجعتها في اليوم العاشر.";
+                } else if (text.includes("nrp") || text.includes("jaundice") || text.includes("حديثي الولادة")) {
+                    response = "<b><i class='fas fa-star'></i> تركيز عالي:</b> موضوع حديثي الولادة له وزن هائل في الامتحان. تأكد من إتقان Jaundice Charts وحسابات APGAR score. هذه مواضيع شبه مضمونة في امتحان الـ NBME.";
+                } else if (text.includes("خلصت") || text.includes("ممتاز") || text.includes("انجزت")) {
+                    response = "<b><i class='fas fa-trophy'></i> أداء رائع!</b> استمر بهذا الزخم. اقرأ التفسيرات بتركيز حتى لو كانت إجابتك صحيحة لتأكيد المعلومة. أنت في الطريق الصحيح للـ 100%!";
+                } else {
+                    response = "<b><i class='fas fa-magic'></i> توجيه عام:</b> استمر في الالتزام بخطة الـ (3-4-2). أفضل طريقة لتثبيت المعلومات هي حل أسئلة CMS واستخدام وضع التركيز العميق (Zen Mode) أسفل الشاشة لزيادة جودة الاستيعاب.";
+                }
+                
+                responseDiv.innerHTML = response;
+            }, 1500);
         }
 
-        // --- نظام مؤقت بومودورو ---
-        function updateTimerDisplay() {
+        // --- وضع Zen Mode ---
+        function openZenMode() {
+            document.getElementById('zen-mode-overlay').style.display = 'flex';
+        }
+
+        function closeZenMode(e) {
+            e.stopPropagation();
+            document.getElementById('zen-mode-overlay').style.display = 'none';
+        }
+
+        function updateZenDisplay() {
             const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
             const s = (timeLeft % 60).toString().padStart(2, '0');
-            document.getElementById('timer-display').innerText = `${m}:${s}`;
+            const timeStr = `${m}:${s}`;
+            document.getElementById('zen-timer').innerText = timeStr;
+            document.getElementById('mini-timer').innerText = timeStr;
         }
 
-        function toggleTimer() {
-            const btn = document.getElementById('timer-btn');
-            const icon = document.getElementById('timer-icon');
+        function toggleZenTimer(e) {
+            e.stopPropagation();
+            const icon = document.getElementById('zen-icon');
+            const btn = document.getElementById('zen-play-btn');
             
             if (isTimerRunning) {
                 clearInterval(timerInterval);
                 icon.className = "fas fa-play ml-1";
-                btn.className = "bg-green-500 hover:bg-green-600 text-white w-10 h-10 rounded-full flex justify-center items-center shadow-lg";
+                btn.classList.replace('bg-yellow-600', 'bg-blue-600');
+                btn.classList.replace('hover:bg-yellow-500', 'hover:bg-blue-500');
+                if(!bgAudio.paused) bgAudio.pause();
             } else {
                 icon.className = "fas fa-pause";
-                btn.className = "bg-yellow-500 hover:bg-yellow-600 text-white w-10 h-10 rounded-full flex justify-center items-center shadow-lg";
+                btn.classList.replace('bg-blue-600', 'bg-yellow-600');
+                btn.classList.replace('hover:bg-blue-500', 'hover:bg-yellow-500');
                 
+                const selectedAudio = document.getElementById('audio-selector').value;
+                if(selectedAudio !== 'none' && bgAudio.paused) {
+                    bgAudio.play().catch(()=>console.log("Audio play prevented by browser"));
+                }
+
                 timerInterval = setInterval(() => {
                     timeLeft--;
-                    updateTimerDisplay();
+                    updateZenDisplay();
                     
                     if (timeLeft <= 0) {
                         clearInterval(timerInterval);
-                        if (isStudySession) {
-                            // انتهت 50 دقيقة دراسة
-                            totalStudyMinutes += 50;
-                            updateStatsUI();
-                            saveToFirestore();
-                            alert("🏆 بطل! انتهت جلسة التركيز. تم حفظ 50 دقيقة دراسة في رصيدك. خذ 10 دقائق راحة الآن.");
-                            isStudySession = false;
-                            timeLeft = 10 * 60; // 10 دقائق راحة
-                            document.getElementById('timer-mode').innerText = "وقت الراحة";
-                            document.getElementById('timer-mode').className = "text-xs bg-green-500 font-bold px-2 py-1 rounded animate-bounce";
-                            document.getElementById('pomodoro-bar').classList.replace('bg-slate-800', 'bg-green-900');
-                        } else {
-                            // انتهت الراحة
-                            alert("⏰ انتهى وقت الراحة! عد للتركيز لتحقيق العلامة الكاملة.");
-                            isStudySession = true;
-                            timeLeft = 50 * 60;
-                            document.getElementById('timer-mode').innerText = "جلسة تركيز";
-                            document.getElementById('timer-mode').className = "text-xs bg-blue-500 font-bold px-2 py-1 rounded animate-pulse";
-                            document.getElementById('pomodoro-bar').classList.replace('bg-green-900', 'bg-slate-800');
-                        }
                         isTimerRunning = false;
                         icon.className = "fas fa-play ml-1";
-                        btn.className = "bg-green-500 hover:bg-green-600 text-white w-10 h-10 rounded-full flex justify-center items-center shadow-lg";
-                        updateTimerDisplay();
+                        btn.classList.replace('bg-yellow-600', 'bg-blue-600');
+                        
+                        if (isStudySession) {
+                            alert("🏆 انتهت جلسة التركيز العميق! خذ 10 دقائق راحة بعيداً عن الشاشة.");
+                            isStudySession = false;
+                            timeLeft = 10 * 60;
+                            document.getElementById('zen-status').innerText = "وقت الاسترخاء";
+                            document.getElementById('zen-status').className = "text-2xl font-bold text-green-400 mb-2 animate-bounce";
+                        } else {
+                            alert("⏰ انتهت الراحة. لنعد إلى التركيز نحو العلامة الكاملة!");
+                            isStudySession = true;
+                            timeLeft = 50 * 60;
+                            document.getElementById('zen-status').innerText = "جلسة تركيز عميق";
+                            document.getElementById('zen-status').className = "text-2xl font-light text-gray-300 mb-2";
+                        }
+                        updateZenDisplay();
                     }
                 }, 1000);
             }
             isTimerRunning = !isTimerRunning;
         }
 
-        function resetTimer() {
+        function resetZenTimer(e) {
+            e.stopPropagation();
             clearInterval(timerInterval);
             isTimerRunning = false;
             isStudySession = true;
             timeLeft = 50 * 60;
-            updateTimerDisplay();
-            document.getElementById('timer-icon').className = "fas fa-play ml-1";
-            document.getElementById('timer-btn').className = "bg-green-500 hover:bg-green-600 text-white w-10 h-10 rounded-full flex justify-center items-center shadow-lg";
-            document.getElementById('timer-mode').innerText = "جلسة تركيز";
-            document.getElementById('timer-mode').className = "text-xs bg-blue-500 font-bold px-2 py-1 rounded";
-            document.getElementById('pomodoro-bar').classList.replace('bg-green-900', 'bg-slate-800');
+            updateZenDisplay();
+            document.getElementById('zen-icon').className = "fas fa-play ml-1";
+            const btn = document.getElementById('zen-play-btn');
+            btn.classList.replace('bg-yellow-600', 'bg-blue-600');
+            btn.classList.replace('hover:bg-yellow-500', 'hover:bg-blue-500');
+            document.getElementById('zen-status').innerText = "جلسة تركيز عميق";
+            document.getElementById('zen-status').className = "text-2xl font-light text-gray-300 mb-2";
+            bgAudio.pause();
         }
 
-        function saveToFirestore() {
-            if (!currentUser) return;
-            document.getElementById('save-status').innerText = "جاري المزامنة...";
-            clearTimeout(saveTimeout);
-            
-            saveTimeout = setTimeout(async () => {
-                try {
-                    await db.collection("users").doc(currentUser.uid).set({
-                        tasks: taskState,
-                        hardTasks: hardTasks,
-                        studyMinutes: totalStudyMinutes,
-                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true });
-                    document.getElementById('save-status').innerText = "✔ تمت المزامنة مع الذكاء الاصطناعي";
-                    setTimeout(() => document.getElementById('save-status').innerText = "", 3000);
-                } catch (error) { document.getElementById('save-status').innerText = "❌ فشلت المزامنة"; }
-            }, 1000); 
+        function changeAudio(e) {
+            const url = e.target.value;
+            if (url === 'none') {
+                bgAudio.pause();
+                bgAudio.src = "";
+            } else {
+                bgAudio.src = url;
+                if (isTimerRunning) {
+                    bgAudio.play().catch(()=>console.log("Play prevented"));
+                }
+            }
         }
 
         async function resetProgress() {
-            if(confirm("تحذير: هل أنت متأكد من مسح جميع بياناتك، ساعات دراستك، والمهام الصعبة؟")) {
-                taskState = {}; hardTasks = {}; totalStudyMinutes = 0;
-                renderDays(); updateProgress(); updateStatsUI(); saveToFirestore();
+            if(confirm("هل أنت متأكد من إعادة ضبط الخطة؟")) {
+                taskState = {};
+                renderDays(); updateProgress();
+                if(currentUser) db.collection("users").doc(currentUser.uid).set({ tasks: taskState }, { merge: true });
             }
         }
 
