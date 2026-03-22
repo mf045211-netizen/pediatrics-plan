@@ -227,7 +227,7 @@
             <div>
                 <h2 class="font-bold leading-tight flex items-center gap-1">
                     <span>المساعد الذكي</span>
-                    <span class="ai-badge">Claude AI</span>
+                    <span class="ai-badge">OpenRouter AI</span>
                 </h2>
                 <span class="text-xs text-indigo-200 flex items-center gap-1">
                     <i class="fas fa-circle text-emerald-400 text-[8px]"></i>متصل الآن · أستاذ الأطفال
@@ -580,8 +580,19 @@ async function resetProgress() {
 }
 
 /* ─────────────────────────────
-   Chat – Claude API
+   Chat – OpenRouter API
+   ✅ يدعم CORS من المتصفح مباشرة
+   ✅ مجاني بالكامل (google/gemma-3-27b-it:free)
+   ✅ للحصول على مفتاحك المجاني: openrouter.ai/keys
 ───────────────────────────── */
+
+// ⬇️ ضع مفتاحك هنا بعد التسجيل المجاني في openrouter.ai
+const OPENROUTER_KEY = "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";
+
+// النموذج المجاني المستخدم – يمكن تغييره لأي نموذج مجاني آخر
+// بدائل مجانية: "meta-llama/llama-4-scout:free" | "mistralai/mistral-7b-instruct:free"
+const AI_MODEL = "google/gemma-3-27b-it:free";
+
 const SYSTEM_PROMPT = `أنت أستاذ طب أطفال خبير ومستشار أكاديمي. تتحدث مع طالب طب في السنة السادسة يدعى محمد يطمح لعلامة 100% في امتحان الأطفال النظري.
 أجب باختصار دقيق، قدّم معلومات سريرية مباشرة بدون مقدمات. عند شرح الأمراض استخدم نمط: التعريف → الأعراض → التشخيص → العلاج.
 استخدم الرموز التعبيرية لتوضيح النقاط الرئيسية واجعل ردودك سهلة المراجعة.`;
@@ -671,15 +682,40 @@ async function sendChatMessage() {
 
     showTyping();
 
+    // تحقق من وجود المفتاح
+    if (!OPENROUTER_KEY || OPENROUTER_KEY === "YOUR_OPENROUTER_KEY_HERE") {
+        removeTyping();
+        appendMessage('⚙️ <b>إعداد مطلوب:</b><br>1️⃣ سجّل مجاناً على <a href="https://openrouter.ai/keys" target="_blank" style="text-decoration:underline;color:#93c5fd">openrouter.ai/keys</a><br>2️⃣ أنشئ مفتاحاً مجانياً<br>3️⃣ ضعه في الكود مكان <code>YOUR_OPENROUTER_KEY_HERE</code>', false);
+        chatHistory.pop();
+        btn.innerHTML = '<i class="fas fa-paper-plane text-sm"></i>';
+        btn.disabled = false;
+        return;
+    }
+
+    // بناء messages بصيغة OpenAI-compatible
+    const messages = [
+        { role: "system", content: SYSTEM_PROMPT },
+        ...chatHistory.map(msg => ({
+            role: msg.role === "assistant" ? "assistant" : "user",
+            content: Array.isArray(msg.content)
+                ? msg.content.map(p => p.type === "text" ? p.text : "[صورة مرفقة]").join(" ")
+                : msg.content
+        }))
+    ];
+
     try {
-        const resp = await fetch("https://api.anthropic.com/v1/messages", {
+        const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${OPENROUTER_KEY}`,
+                "HTTP-Referer": window.location.href,
+                "X-Title": "Pediatrics Study Plan"
+            },
             body: JSON.stringify({
-                model: "claude-sonnet-4-20250514",
+                model: AI_MODEL,
                 max_tokens: 1000,
-                system: SYSTEM_PROMPT,
-                messages: chatHistory
+                messages
             })
         });
 
@@ -690,7 +726,7 @@ async function sendChatMessage() {
             appendMessage(`❌ خطأ: ${data.error.message}`, false);
             chatHistory.pop();
         } else {
-            const aiText = data.content.map(b => b.text || '').join('');
+            const aiText = data.choices[0].message.content;
             chatHistory.push({ role: "assistant", content: aiText });
             const formatted = aiText
                 .replace(/\n/g, '<br>')
