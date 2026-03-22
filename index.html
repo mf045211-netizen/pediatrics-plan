@@ -121,11 +121,20 @@
 
         function loginWithGoogle() {
     document.getElementById('loading-overlay').style.display = 'flex';
-    document.getElementById('loading-text').innerText = "جاري تحويلك لجوجل...";
+    document.getElementById('loading-text').innerText = "جاري فتح نافذة جوجل...";
     const provider = new firebase.auth.GoogleAuthProvider();
-    // استخدمنا Redirect بدلاً من Popup لتجنب حظر الآيباد
-    auth.signInWithRedirect(provider);
+    
+    // عدنا لاستخدام النافذة المنبثقة لأن موقعك الآن مستقل وآمن
+    auth.signInWithPopup(provider).then((result) => {
+        // نجح تسجيل الدخول، النافذة ستغلق تلقائياً
+        document.getElementById('loading-overlay').style.display = 'none';
+    }).catch(error => {
+        console.error("Login Error:", error);
+        alert("حدث خطأ أثناء تسجيل الدخول. إذا كنت تستخدم الآيباد، تأكد من عدم حظر النوافذ المنبثقة في إعدادات Safari.");
+        document.getElementById('loading-overlay').style.display = 'none';
+    });
 }
+
 
 // اصطياد الأخطاء بعد العودة من صفحة جوجل
 auth.getRedirectResult().catch(error => {
