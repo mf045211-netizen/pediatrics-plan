@@ -120,15 +120,20 @@
         });
 
         function loginWithGoogle() {
-            document.getElementById('loading-overlay').style.display = 'flex';
-            document.getElementById('loading-text').innerText = "جاري تحويلك لجوجل...";
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).catch(error => {
-                console.error(error);
-                alert("يرجى التأكد من السماح بالنوافذ المنبثقة (Pop-ups) في متصفحك للمتابعة.");
-                document.getElementById('loading-overlay').style.display = 'none';
-            });
-        }
+    document.getElementById('loading-overlay').style.display = 'flex';
+    document.getElementById('loading-text').innerText = "جاري تحويلك لجوجل...";
+    const provider = new firebase.auth.GoogleAuthProvider();
+    // استخدمنا Redirect بدلاً من Popup لتجنب حظر الآيباد
+    auth.signInWithRedirect(provider);
+}
+
+// اصطياد الأخطاء بعد العودة من صفحة جوجل
+auth.getRedirectResult().catch(error => {
+    console.error("Redirect Error:", error);
+    alert("حدث خطأ أثناء تسجيل الدخول: " + error.message);
+    document.getElementById('loading-overlay').style.display = 'none';
+});
+
 
         async function loadUserData(userId) {
             document.getElementById('loading-overlay').style.display = 'flex';
