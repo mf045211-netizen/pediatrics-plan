@@ -12,7 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; padding-bottom: 80px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; padding-bottom: 80px; scroll-behavior: smooth;}
         .task-checkbox:checked + div { text-decoration: line-through; color: #9ca3af; }
         .task-checkbox:checked + div + .check-icon { display: block; }
         .day-card { transition: all 0.3s ease; }
@@ -30,6 +30,13 @@
         }
         .zen-clock { font-size: 8rem; font-weight: bold; font-family: 'Courier New', Courier, monospace; text-shadow: 0 4px 20px rgba(0,0,0,0.5); }
         @media (max-width: 768px) { .zen-clock { font-size: 5rem; } }
+
+        /* تنسيقات المحادثة الذكية */
+        .chat-container { scrollbar-width: thin; }
+        .chat-container::-webkit-scrollbar { width: 6px; }
+        .chat-container::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+        .msg-user { background-color: #4f46e5; color: white; border-radius: 1rem 1rem 0 1rem; align-self: flex-end; max-width: 85%; }
+        .msg-ai { background-color: #ffffff; color: #1f2937; border-radius: 1rem 1rem 1rem 0; border: 1px solid #e2e8f0; align-self: flex-start; max-width: 85%; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -42,7 +49,7 @@
     <div id="login-section" class="max-w-md mx-auto mt-20 bg-white p-8 rounded-2xl shadow-xl text-center border-t-4 border-blue-600" style="display: none;">
         <div class="mb-6 text-blue-600 text-5xl"><i class="fas fa-user-md"></i></div>
         <h2 class="text-2xl font-bold mb-2 text-gray-800">خطة الـ 100% - الأطفال</h2>
-        <p class="text-gray-500 mb-8 text-sm">سجل دخولك لمتابعة خطتك، استخدام وضع التركيز العميق، والمستشار الذكي.</p>
+        <p class="text-gray-500 mb-8 text-sm">سجل دخولك لمتابعة خطتك، استخدام وضع التركيز العميق، والتحدث مع الأستاذ الذكي.</p>
         
         <button onclick="loginWithGoogle()" class="w-full bg-white hover:bg-gray-50 text-gray-800 font-bold py-3 px-4 rounded-lg shadow border border-gray-300 flex justify-center items-center gap-3 transition-colors">
             <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" class="w-5 h-5">
@@ -68,17 +75,46 @@
             <p class="mt-2 text-sm font-semibold" id="progress-text">نسبة الإنجاز الكلية: 0%</p>
         </header>
 
-        <div class="bg-white rounded-xl shadow-md p-6 mb-8 border-r-4 border-indigo-500">
-            <div class="flex items-center gap-2 mb-4 text-indigo-700">
-                <i class="fas fa-robot text-2xl"></i>
-                <h2 class="text-xl font-bold">أستاذ طب الأطفال الذكي</h2>
+        <div class="bg-white rounded-2xl shadow-lg mb-8 border border-indigo-100 overflow-hidden flex flex-col">
+            <div class="bg-indigo-600 p-4 text-white flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="bg-white text-indigo-600 w-10 h-10 rounded-full flex justify-center items-center text-xl shadow-inner">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-lg leading-tight">Gemini - أستاذ الأطفال</h2>
+                        <span class="text-xs text-indigo-200"><i class="fas fa-circle text-green-400 text-[10px] mr-1"></i>متصل الآن</span>
+                    </div>
+                </div>
+                <button onclick="clearChat()" class="text-indigo-200 hover:text-white transition-colors" title="مسح المحادثة">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
             </div>
-            <p class="text-sm text-gray-600 mb-3">اطرح سؤالاً طبياً، أو اطلب شرحاً لخوارزمية، أو شاركني صعوبات يومك الدراسي:</p>
-            <textarea id="ai-input" rows="2" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-800 mb-3" placeholder="مثال: كيف أفرق بين RDS و TTN في أسئلة UWorld؟"></textarea>
-            <button onclick="analyzeProgress()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition-colors text-sm flex items-center gap-2">
-                <i class="fas fa-magic"></i> إرسال للأستاذ
-            </button>
-            <div id="ai-response" class="mt-4 p-4 bg-indigo-50 rounded-lg text-indigo-800 text-sm hidden border border-indigo-100 leading-relaxed"></div>
+            
+            <div id="chat-box" class="chat-container h-80 overflow-y-auto p-4 flex flex-col gap-3 bg-slate-50">
+                <div class="msg-ai p-3 text-sm">
+                    مرحباً د. محمد! أنا هنا لمساعدتك في الوصول لعلامة 100% في امتحان الأطفال. اسألني أي سؤال طبي، أو ارفع لي صورة لسؤال استصعبته من UWorld لأشرحه لك.
+                </div>
+            </div>
+
+            <div class="bg-white p-3 border-t border-gray-200 flex items-end gap-2">
+                <input type="file" id="image-upload" accept="image/*" class="hidden" onchange="handleImageSelect(event)">
+                <button onclick="document.getElementById('image-upload').click()" class="text-gray-400 hover:text-indigo-600 p-2 transition-colors" title="إرفاق صورة">
+                    <i class="fas fa-paperclip text-xl"></i>
+                </button>
+                
+                <div class="flex-1 relative">
+                    <div id="image-preview-container" class="hidden absolute bottom-full mb-2 left-0 bg-white border border-gray-200 p-1 rounded-lg shadow-md">
+                        <img id="image-preview" src="" class="h-16 rounded opacity-80">
+                        <button onclick="removeImage()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex justify-center items-center text-xs"><i class="fas fa-times"></i></button>
+                    </div>
+                    <textarea id="chat-input" rows="1" class="w-full bg-gray-100 border-transparent rounded-xl py-3 px-4 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 resize-none transition-all text-sm" placeholder="اكتب سؤالك هنا..."></textarea>
+                </div>
+                
+                <button onclick="sendChatMessage()" id="send-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl w-12 h-12 flex justify-center items-center transition-colors shadow-md flex-shrink-0">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="days-container"></div>
@@ -148,21 +184,27 @@
         const db = firebase.firestore();
 
         const planData = [
-            { date: "اليوم 1 (22/3)", title: "حجر الأساس والوقاية", tasks: ["3 ساعات (UW Notes): Growth & Dev (الـ Milestones)، Nutrition، Vaccines، Child Abuse.", "4 ساعات (UWorld): Tutor/Unused - اختر General Principles و Psychiatry/Psychology.", "ساعتان مراجعة: حل 20 سؤال CMS أطفال قديم."] },
-            { date: "اليوم 2 (23/3)", title: "حديثي الولادة (أهم يوم)", tasks: ["3 ساعات (UW Notes): خوارزمية NRP، RDS vs TTN vs MAS، Jaundice (متى ضوء/تغيير دم)، Sepsis.", "4 ساعات (UWorld): Tutor/Unused - اختر Pregnancy, Childbirth & Puerperium.", "ساعتان مراجعة: التركيز على Jaundice Charts وحل أخطاء اليوم."] },
-            { date: "اليوم 3 (24/3)", title: "الأمراض المعدية", tasks: ["3 ساعات (UW Notes): Meningitis (تحليل CSF)، Viral Exanthems (شكل الطفح)، Kawasaki (معايير 5)، Bone infections.", "4 ساعات (UWorld): Tutor/Unused - اختر Infectious Diseases.", "ساعتان مراجعة: حل 20 سؤال CMS إضافي."] },
-            { date: "اليوم 4 (25/3)", title: "التنفسي والقلب", tasks: ["3 ساعات (UW Notes): Asthma, Bronchiolitis, Croup, Epiglottitis, CF | CHD (Cyanotic vs Acyanotic).", "4 ساعات (UWorld): Tutor/Unused - اختر Pulmonary & Critical Care و Cardiovascular.", "ساعتان مراجعة: مراجعة أصوات القلب (Murmurs) وأخطاء اليوم."] },
-            { date: "اليوم 5 (26/3)", title: "الجهاز الهضمي والتغذية", tasks: ["3 ساعات (UW Notes): Dehydration (حساب Deficit والسوائل)، Intussusception, Pyloric Stenosis, Hirschsprung.", "4 ساعات (UWorld): Tutor/Unused - اختر Gastrointestinal & Nutrition.", "ساعتان مراجعة: التدرب بورقة وقلم على مسائل السوائل (Maintenance & Deficit)."] },
-            { date: "اليوم 6 (27/3)", title: "الأعصاب والطب النفسي", tasks: ["3 ساعات (UW Notes): Seizures (Febrile vs Spasms)، CP، Neurocutaneous Syndromes، ADHD، Autism.", "4 ساعات (UWorld): Tutor/Unused - اختر Nervous System.", "ساعتان مراجعة: حل 20 سؤال CMS."] },
-            { date: "اليوم 7 (28/3)", title: "الدم والأورام والمناعة", tasks: ["3 ساعات (UW Notes): Anemias (الحديد vs ثلاسيميا)، Bleeding، Oncology (ALL, Wilms)، Immunodeficiencies.", "4 ساعات (UWorld): Tutor/Unused - اختر Hematology/Oncology و Immunology.", "ساعتان مراجعة: مراجعة صور خلايا الدم (Blood Film) من UWorld."] },
-            { date: "اليوم 8 (29/3)", title: "الكلى، الغدد، الجينات", tasks: ["3 ساعات (UW Notes): Nephrotic vs Nephritic, UTI | DKA (علاج طارئ)، Hypothyroidism | Down, Turner, Marfan.", "4 ساعات (UWorld): Tutor/Unused - اختر Renal, Endocrine و Genetics.", "ساعتان مراجعة: حل 20 سؤال CMS."] },
+            { date: "اليوم 1 (22/3)", title: "حجر الأساس والوقاية", tasks: ["3 ساعات (UW Notes): Growth & Dev، Nutrition، Vaccines، Child Abuse.", "4 ساعات (UWorld): Tutor/Unused - اختر General Principles و Psychiatry/Psychology.", "ساعتان مراجعة: حل 20 سؤال CMS أطفال قديم."] },
+            { date: "اليوم 2 (23/3)", title: "حديثي الولادة (أهم يوم)", tasks: ["3 ساعات (UW Notes): خوارزمية NRP، RDS vs TTN vs MAS، Jaundice، Sepsis.", "4 ساعات (UWorld): Tutor/Unused - اختر Pregnancy, Childbirth & Puerperium.", "ساعتان مراجعة: التركيز على Jaundice Charts وحل أخطاء اليوم."] },
+            { date: "اليوم 3 (24/3)", title: "الأمراض المعدية", tasks: ["3 ساعات (UW Notes): Meningitis، Viral Exanthems، Kawasaki، Bone infections.", "4 ساعات (UWorld): Tutor/Unused - اختر Infectious Diseases.", "ساعتان مراجعة: حل 20 سؤال CMS إضافي."] },
+            { date: "اليوم 4 (25/3)", title: "التنفسي والقلب", tasks: ["3 ساعات (UW Notes): Asthma, Bronchiolitis, Croup, CF | CHD (Cyanotic vs Acyanotic).", "4 ساعات (UWorld): Tutor/Unused - اختر Pulmonary & Critical Care و Cardiovascular.", "ساعتان مراجعة: مراجعة أصوات القلب (Murmurs) وأخطاء اليوم."] },
+            { date: "اليوم 5 (26/3)", title: "الجهاز الهضمي والتغذية", tasks: ["3 ساعات (UW Notes): Dehydration (حساب Deficit والسوائل)، Intussusception, Pyloric Stenosis.", "4 ساعات (UWorld): Tutor/Unused - اختر Gastrointestinal & Nutrition.", "ساعتان مراجعة: التدرب بورقة وقلم على مسائل السوائل (Maintenance & Deficit)."] },
+            { date: "اليوم 6 (27/3)", title: "الأعصاب والطب النفسي", tasks: ["3 ساعات (UW Notes): Seizures (Febrile vs Spasms)، CP، ADHD، Autism.", "4 ساعات (UWorld): Tutor/Unused - اختر Nervous System.", "ساعتان مراجعة: حل 20 سؤال CMS."] },
+            { date: "اليوم 7 (28/3)", title: "الدم والأورام والمناعة", tasks: ["3 ساعات (UW Notes): Anemias (الحديد vs ثلاسيميا)، Bleeding، Oncology، Immunodeficiencies.", "4 ساعات (UWorld): Tutor/Unused - اختر Hematology/Oncology و Immunology.", "ساعتان مراجعة: مراجعة صور خلايا الدم (Blood Film) من UWorld."] },
+            { date: "اليوم 8 (29/3)", title: "الكلى، الغدد، الجينات", tasks: ["3 ساعات (UW Notes): Nephrotic vs Nephritic, UTI | DKA، Hypothyroidism | Down, Turner.", "4 ساعات (UWorld): Tutor/Unused - اختر Renal, Endocrine و Genetics.", "ساعتان مراجعة: حل 20 سؤال CMS."] },
             { date: "اليوم 9 (30/3)", title: "يوم المحاكاة الشاملة", tasks: ["المهمة 1 (ساعتان): حل 40 سؤال Incorrects من UWorld (Timed - جميع الأنظمة).", "المهمة 2 (ساعتان): حل نموذج CMS أطفال كامل (50 سؤال) تحت ضغط الوقت.", "المهمة 3 (الباقي): مراجعة الإجابات الخاطئة من CMS وأسئلة اليوم."] },
-            { date: "اليوم 10 (31/3)", title: "اللمسات الأخيرة (قبل الامتحان)", tasks: ["الصباح (3 ساعات): مراجعة سريعة للجداول والخوارزميات المعقدة.", "الظهر (ساعتان): تصفح سريع لجميع الصور (Images/Flashcards) في UWorld.", "المساء: راجع القوانين البسيطة (سوائل، APGAR) ونام مبكراً (8 ساعات) لصفاء الذهن."] }
+            { date: "اليوم 10 (31/3)", title: "اللمسات الأخيرة (قبل الامتحان)", tasks: ["الصباح (3 ساعات): مراجعة سريعة للجداول والخوارزميات المعقدة.", "الظهر (ساعتان): تصفح سريع لجميع الصور (Images/Flashcards) في UWorld.", "المساء: راجع القوانين البسيطة (سوائل، APGAR) ونام مبكراً (8 ساعات)."] }
         ];
 
         let currentUser = null;
         let taskState = {};
         
+        // متغيرات المحادثة
+        let chatHistory = [];
+        let pendingImageBase64 = null;
+        let pendingImageMime = null;
+        const GEMINI_API_KEY = "AIzaSyB3gLTidHFKIkYzkLDPLs3aO_5Evw6JQhs"; // مفتاحك الفعلي
+
         let timerInterval;
         let timeLeft = 50 * 60; 
         let isTimerRunning = false;
@@ -250,47 +292,117 @@
             document.getElementById('progress-text').innerText = `نسبة الإنجاز: ${percentage}%`;
         }
 
-        async function analyzeProgress() {
-            const input = document.getElementById('ai-input').value.trim();
-            const responseDiv = document.getElementById('ai-response');
-            
-            if(!input) {
-                alert("يرجى كتابة استفسارك أو حالتك ليقوم الأستاذ بتحليلها.");
-                return;
+        // --- نظام المحادثة المتكامل بـ Gemini ---
+        function handleImageSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                pendingImageBase64 = e.target.result.split(',')[1];
+                pendingImageMime = file.type;
+                document.getElementById('image-preview').src = e.target.result;
+                document.getElementById('image-preview-container').classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeImage() {
+            pendingImageBase64 = null;
+            pendingImageMime = null;
+            document.getElementById('image-preview-container').classList.add('hidden');
+            document.getElementById('image-upload').value = '';
+        }
+
+        function appendMessage(text, isUser, isImage = false) {
+            const box = document.getElementById('chat-box');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `p-3 text-sm ${isUser ? 'msg-user' : 'msg-ai'}`;
+            if(isImage) {
+                msgDiv.innerHTML = `<img src="data:${pendingImageMime};base64,${pendingImageBase64}" class="w-48 rounded mb-2 border border-white/20">` + text;
+            } else {
+                msgDiv.innerHTML = text;
             }
+            box.appendChild(msgDiv);
+            box.scrollTop = box.scrollHeight;
+        }
 
-            responseDiv.classList.remove('hidden');
-            responseDiv.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> جاري استشارة أستاذ الأطفال الذكي...';
+        function clearChat() {
+            if(confirm("هل تريد مسح المحادثة بالكامل؟")) {
+                chatHistory = [];
+                document.getElementById('chat-box').innerHTML = `<div class="msg-ai p-3 text-sm">تم مسح الذاكرة. كيف يمكنني مساعدتك الآن؟</div>`;
+            }
+        }
 
-            const GEMINI_API_KEY = "AIzaSyB3gLTidHFKIkYzkLDPLs3aO_5Evw6JQhs"; 
+        async function sendChatMessage() {
+            const inputField = document.getElementById('chat-input');
+            const text = inputField.value.trim();
+            const btn = document.getElementById('send-btn');
+            
+            if (!text && !pendingImageBase64) return;
 
-            const systemPrompt = "أنت أستاذ طب أطفال ومستشار أكاديمي خبير. تتحدث مع د. محمد زهور، طالب طب في السنة السادسة في جامعة بوليتكنك فلسطين، والذي يطمح للعلامة الكاملة (100%) في امتحان الأطفال النظري. الطالب يدرس بنظام (3-4-2) ويعتمد على UWorld و CMS. أجب على استفساره التالي باختصار شديد، بطريقة محفزة جداً، وبنصائح طبية وعملية دقيقة جداً: " + input;
+            // إضافة رسالة المستخدم للواجهة
+            appendMessage(text, true, !!pendingImageBase64);
+            inputField.value = '';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+
+            // تجهيز البيانات لـ Gemini
+            let userParts = [];
+            if (text) userParts.push({ text: text });
+            if (pendingImageBase64) {
+                userParts.push({ inlineData: { data: pendingImageBase64, mimeType: pendingImageMime } });
+            }
+            
+            chatHistory.push({ role: "user", parts: userParts });
+            removeImage(); // تنظيف الصورة بعد الإرسال
+
+            // رسالة التوجيه الخفية
+            const systemPrompt = "أنت أستاذ طب أطفال ومستشار أكاديمي خبير. تتحدث مع طالب طب في السنة السادسة في جامعة بوليتكنك فلسطين يدعى محمد زهور، يطمح لعلامة 100% في امتحان الأطفال النظري. أجب باختصار، قدم نصائح دراسية متقنة وخطة عند سؤالك عن الامتحان، وركز على الشرح السريري المباشر بدون مقدمات طويلة. استخدم تنسيق النص الواضح.";
+
+            const payload = {
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                contents: chatHistory
+            };
 
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: systemPrompt }] }]
-                    })
+                    body: JSON.stringify(payload)
                 });
 
                 const data = await response.json();
                 
-                if(data.candidates && data.candidates.length > 0) {
+                if (data.error) {
+                    appendMessage(`❌ حدث خطأ من السيرفر: ${data.error.message}`, false);
+                    chatHistory.pop(); // التراجع عن رسالة المستخدم في حال الخطأ
+                } else if(data.candidates && data.candidates.length > 0) {
                     let aiText = data.candidates[0].content.parts[0].text;
-                    aiText = aiText.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b class="text-indigo-900">$1</b>');
-                    responseDiv.innerHTML = `<div class="border-b border-indigo-200 pb-2 mb-2"><i class='fas fa-user-md text-indigo-600 text-lg mr-2'></i> <b>أستاذ الأطفال:</b></div>${aiText}`;
-                } else {
-                    responseDiv.innerHTML = "❌ عذراً، لم أتمكن من صياغة إجابة. حاول بصيغة أخرى.";
+                    chatHistory.push({ role: "model", parts: [{ text: aiText }] });
+                    
+                    // تنسيق الرد (تغليق الخط العريض، إضافة مسافات)
+                    aiText = aiText.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+                    appendMessage(aiText, false);
                 }
-
             } catch (error) {
                 console.error("API Error:", error);
-                responseDiv.innerHTML = "❌ تعذر الاتصال بالذكاء الاصطناعي.";
+                appendMessage("❌ تعذر الاتصال. تأكد من جودة الإنترنت وحاول مجدداً.", false);
+                chatHistory.pop();
             }
+
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+            btn.disabled = false;
         }
 
+        // السماح بالإرسال عند ضغط Enter
+        document.getElementById('chat-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendChatMessage();
+            }
+        });
+
+        // --- وضع Zen Mode ---
         function openZenMode() { document.getElementById('zen-mode-overlay').style.display = 'flex'; }
         function closeZenMode(e) { e.stopPropagation(); document.getElementById('zen-mode-overlay').style.display = 'none'; }
 
