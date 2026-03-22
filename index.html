@@ -324,14 +324,53 @@
         }
 
         // --- نظام الذكاء الاصطناعي المبسط ---
-        function analyzeProgress() {
+                async function analyzeProgress() {
             const input = document.getElementById('ai-input').value.trim();
             const responseDiv = document.getElementById('ai-response');
             
             if(!input) {
-                alert("يرجى كتابة شيء ليقوم المستشار بتحليله.");
+                alert("يرجى كتابة استفسارك أو حالتك ليقوم المستشار بتحليلها.");
                 return;
             }
+
+            responseDiv.classList.remove('hidden');
+            responseDiv.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> جاري استشارة أستاذ الأطفال الذكي...';
+
+            // ⚠️ ضع مفتاح API الخاص بك هنا بين علامتي التنصيص
+            const GEMINI_API_KEY = "AIzaSyAuA5Eq8zQZ7p14uTzsalMcZBurIqEOtAI"; 
+
+            // توجيه خفي للذكاء الاصطناعي (System Prompt) ليعطيك إجابات احترافية ومخصصة لك
+            const systemPrompt = `أنت أستاذ طب أطفال ومستشار أكاديمي خبير. تتحدث مع طالب طب في السنة السادسة في جامعة بوليتكنك فلسطين، يطمح للعلامة الكاملة (100%) في امتحان الأطفال النظري. الطالب يدرس بنظام (3-4-2) ويعتمد على UWorld و CMS. 
+            أجب على استفساره التالي باختصار شديد، بطريقة محفزة جداً، وبنصائح طبية وعملية دقيقة جداً: ${input}`;
+
+            try {
+                // الاتصال المباشر بمحرك Gemini 1.5 Flash السريع
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: systemPrompt }] }]
+                    })
+                });
+
+                const data = await response.json();
+                
+                if(data.candidates && data.candidates.length > 0) {
+                    // تحويل النص ليناسب عرض صفحة الويب
+                    let aiText = data.candidates[0].content.parts[0].text;
+                    aiText = aiText.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<b class="text-indigo-900">$1</b>');
+                    
+                    responseDiv.innerHTML = `<div class="border-b border-indigo-200 pb-2 mb-2"><i class='fas fa-user-md text-indigo-600 text-lg mr-2'></i> <b>أستاذ الأطفال:</b></div>${aiText}`;
+                } else {
+                    responseDiv.innerHTML = "❌ عذراً، لم أتمكن من صياغة إجابة. حاول بصيغة أخرى.";
+                }
+
+            } catch (error) {
+                console.error("API Error:", error);
+                responseDiv.innerHTML = "❌ تعذر الاتصال بالذكاء الاصطناعي. تأكد من وضع مفتاح API الصحيح في الكود.";
+            }
+        }
+
 
             responseDiv.classList.remove('hidden');
             responseDiv.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> جاري تحليل بياناتك...';
