@@ -18,7 +18,6 @@
         .day-card { transition: all 0.3s ease; }
         .day-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
         #progress-fill { transition: width 0.5s ease-in-out; }
-        
         #loading-overlay { display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 1000; justify-content: center; align-items: center; flex-direction: column; }
         .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #2563eb; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -68,7 +67,6 @@
     </div>
 
     <script>
-        // إعدادات Firebase الخاصة بك
         const firebaseConfig = {
             apiKey: "AIzaSyCs-ho-vGUbUpPYd9WRlcAtdLxuRkvf5f4",
             authDomain: "pediatrics-app.firebaseapp.com",
@@ -85,7 +83,6 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // الخطة الشاملة
         const planData = [
             { date: "اليوم 1 (22/3)", title: "حجر الأساس (General Peds)", tasks: ["قراءة UW Notes: Growth, Nutrition, Vaccines (3 ساعات)", "UWorld (Tutor/Unused): General Principles & Psychiatry (4 ساعات)", "مراجعة سريعة لأخطاء اليوم أو حل نموذج مصغر (ساعتان)"] },
             { date: "اليوم 2 (23/3)", title: "حديثي الولادة (Neonatology)", tasks: ["قراءة UW Notes: NRP, RDS, Jaundice, Sepsis (3 ساعات)", "UWorld (Tutor/Unused): Pregnancy, Childbirth & Puerperium (4 ساعات)", "حل 20 سؤال CMS أطفال (ساعتان)"] },
@@ -108,8 +105,8 @@
                 currentUser = user;
                 document.getElementById('display-name').innerText = user.displayName || user.email;
                 document.getElementById('user-photo').src = user.photoURL || 'https://via.placeholder.com/150';
-                
                 document.getElementById('login-section').style.display = 'none';
+                
                 loadUserData(user.uid);
             } else {
                 currentUser = null;
@@ -120,29 +117,15 @@
         });
 
         function loginWithGoogle() {
-    document.getElementById('loading-overlay').style.display = 'flex';
-    document.getElementById('loading-text').innerText = "جاري فتح نافذة جوجل...";
-    const provider = new firebase.auth.GoogleAuthProvider();
-    
-    // عدنا لاستخدام النافذة المنبثقة لأن موقعك الآن مستقل وآمن
-    auth.signInWithPopup(provider).then((result) => {
-        // نجح تسجيل الدخول، النافذة ستغلق تلقائياً
-        document.getElementById('loading-overlay').style.display = 'none';
-    }).catch(error => {
-        console.error("Login Error:", error);
-        alert("حدث خطأ أثناء تسجيل الدخول. إذا كنت تستخدم الآيباد، تأكد من عدم حظر النوافذ المنبثقة في إعدادات Safari.");
-        document.getElementById('loading-overlay').style.display = 'none';
-    });
-}
-
-
-// اصطياد الأخطاء بعد العودة من صفحة جوجل
-auth.getRedirectResult().catch(error => {
-    console.error("Redirect Error:", error);
-    alert("حدث خطأ أثناء تسجيل الدخول: " + error.message);
-    document.getElementById('loading-overlay').style.display = 'none';
-});
-
+            document.getElementById('loading-overlay').style.display = 'flex';
+            document.getElementById('loading-text').innerText = "جاري تحويلك لجوجل...";
+            const provider = new firebase.auth.GoogleAuthProvider();
+            auth.signInWithPopup(provider).catch(error => {
+                console.error("Login Error:", error);
+                alert("تعذر فتح نافذة تسجيل الدخول. يرجى التأكد من عدم حظر النوافذ المنبثقة.");
+                document.getElementById('loading-overlay').style.display = 'none';
+            });
+        }
 
         async function loadUserData(userId) {
             document.getElementById('loading-overlay').style.display = 'flex';
@@ -154,12 +137,15 @@ auth.getRedirectResult().catch(error => {
                 } else {
                     taskState = {};
                 }
+            } catch (error) {
+                console.error("Firestore Error:", error);
+                alert("ملاحظة: حدث خطأ في الاتصال بقاعدة البيانات. (" + error.message + ")");
+                taskState = {}; // لتستمر في الدراسة حتى لو فشل الاتصال بالقاعدة
+            } finally {
+                // هذا السطر سُيجبر الصفحة على الفتح سواء نجح الاتصال بالقاعدة أو فشل
                 renderDays();
                 updateProgress();
                 document.getElementById('main-content').style.display = 'block';
-            } catch (error) {
-                console.error("Error loading document:", error);
-            } finally {
                 document.getElementById('loading-overlay').style.display = 'none';
             }
         }
@@ -193,7 +179,6 @@ auth.getRedirectResult().catch(error => {
             const checkbox = document.getElementById(taskId);
             const textElement = document.getElementById(`text_${taskId}`);
             const icon = checkbox.nextElementSibling;
-
             taskState[taskId] = checkbox.checked;
             
             if (checkbox.checked) {
@@ -211,7 +196,6 @@ auth.getRedirectResult().catch(error => {
             const totalTasks = planData.reduce((acc, day) => acc + day.tasks.length, 0);
             const completedTasks = Object.values(taskState).filter(val => val === true).length;
             const percentage = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
-            
             document.getElementById('progress-fill').style.width = `${percentage}%`;
             document.getElementById('progress-text').innerText = `نسبة الإنجاز الكلية: ${percentage}% (${completedTasks} من ${totalTasks} مهام)`;
         }
@@ -249,8 +233,6 @@ auth.getRedirectResult().catch(error => {
         function logoutUser() {
             auth.signOut().then(() => {
                 taskState = {};
-            }).catch(error => {
-                console.error("Sign out error", error);
             });
         }
     </script>
