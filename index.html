@@ -250,7 +250,6 @@
             document.getElementById('progress-text').innerText = `نسبة الإنجاز: ${percentage}%`;
         }
 
-        // --- نظام الاستشارة الذكي بـ Gemini ---
         async function analyzeProgress() {
             const input = document.getElementById('ai-input').value.trim();
             const responseDiv = document.getElementById('ai-response');
@@ -263,10 +262,8 @@
             responseDiv.classList.remove('hidden');
             responseDiv.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> جاري استشارة أستاذ الأطفال الذكي...';
 
-            // مفتاح الذكاء الاصطناعي مدمج مباشرة
             const GEMINI_API_KEY = "AIzaSyB3gLTidHFKIkYzkLDPLs3aO_5Evw6JQhs"; 
 
-            // توجيه الذكاء الاصطناعي بناءً على معلوماتك
             const systemPrompt = "أنت أستاذ طب أطفال ومستشار أكاديمي خبير. تتحدث مع د. محمد زهور، طالب طب في السنة السادسة في جامعة بوليتكنك فلسطين، والذي يطمح للعلامة الكاملة (100%) في امتحان الأطفال النظري. الطالب يدرس بنظام (3-4-2) ويعتمد على UWorld و CMS. أجب على استفساره التالي باختصار شديد، بطريقة محفزة جداً، وبنصائح طبية وعملية دقيقة جداً: " + input;
 
             try {
@@ -294,7 +291,6 @@
             }
         }
 
-        // --- وضع Zen Mode ---
         function openZenMode() { document.getElementById('zen-mode-overlay').style.display = 'flex'; }
         function closeZenMode(e) { e.stopPropagation(); document.getElementById('zen-mode-overlay').style.display = 'none'; }
 
