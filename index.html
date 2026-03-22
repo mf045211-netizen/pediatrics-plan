@@ -7,674 +7,796 @@
     <title>خطة الـ 100% - أطفال (Pediatrics)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 
 ```
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+```
 
 <style>
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; padding-bottom: 80px; scroll-behavior: smooth;}
-    .task-checkbox:checked + div { text-decoration: line-through; color: #9ca3af; }
-    .day-card { transition: all 0.3s ease; }
-    .day-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-    #progress-fill { transition: width 0.5s ease-in-out; }
-    #loading-overlay { display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); z-index: 1000; justify-content: center; align-items: center; flex-direction: column; }
-    .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #2563eb; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    
-    #zen-mode-overlay { 
-        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-        background: linear-gradient(135deg, #1e293b, #0f172a); 
-        z-index: 2000; flex-direction: column; justify-content: center; align-items: center; color: white;
-        transition: opacity 0.5s ease;
+    :root {
+        --primary: #1d4ed8;
+        --primary-dark: #1e3a8a;
+        --accent: #10b981;
+        --surface: #f8fafc;
+        --card: #ffffff;
+        --text: #0f172a;
+        --muted: #64748b;
+        --border: #e2e8f0;
     }
-    .zen-clock { font-size: 8rem; font-weight: bold; font-family: 'Courier New', Courier, monospace; text-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-    @media (max-width: 768px) { .zen-clock { font-size: 5rem; } }
 
-    .chat-container { scrollbar-width: thin; }
-    .chat-container::-webkit-scrollbar { width: 6px; }
-    .chat-container::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
-    .msg-user { background-color: #4f46e5; color: white; border-radius: 1rem 1rem 0 1rem; align-self: flex-end; max-width: 85%; }
-    .msg-ai { background-color: #ffffff; color: #1f2937; border-radius: 1rem 1rem 1rem 0; border: 1px solid #e2e8f0; align-self: flex-start; max-width: 85%; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    * { box-sizing: border-box; }
 
-    /* مؤشر الكتابة */
+    body {
+        font-family: 'Tajawal', sans-serif;
+        background-color: var(--surface);
+        color: var(--text);
+        padding-bottom: 80px;
+        scroll-behavior: smooth;
+    }
+
+    /* ── Loading ── */
+    #loading-overlay {
+        display: flex; position: fixed; inset: 0;
+        background: rgba(255,255,255,0.97); z-index: 1000;
+        justify-content: center; align-items: center; flex-direction: column;
+    }
+    .spinner {
+        border: 3px solid #e2e8f0; border-top: 3px solid var(--primary);
+        border-radius: 50%; width: 44px; height: 44px;
+        animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Cards ── */
+    .day-card {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        border-left: 4px solid var(--primary);
+    }
+    .day-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 24px -4px rgba(29,78,216,0.12);
+    }
+
+    /* ── Progress ── */
+    #progress-fill { transition: width 0.6s cubic-bezier(.4,0,.2,1); }
+
+    /* ── Checkbox magic ── */
+    .task-checkbox:checked ~ .task-label { text-decoration: line-through; color: #94a3b8; }
+
+    /* ── Chat ── */
+    .chat-container { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+    .chat-container::-webkit-scrollbar { width: 5px; }
+    .chat-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+
+    .msg-user {
+        background: var(--primary);
+        color: white;
+        border-radius: 1.1rem 1.1rem 0.2rem 1.1rem;
+        align-self: flex-end;
+        max-width: 82%;
+        animation: slideInRight 0.25s ease;
+    }
+    .msg-ai {
+        background: #fff;
+        color: var(--text);
+        border-radius: 1.1rem 1.1rem 1.1rem 0.2rem;
+        border: 1px solid var(--border);
+        align-self: flex-start;
+        max-width: 82%;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        animation: slideInLeft 0.25s ease;
+    }
+    .msg-ai.thinking { opacity: 0.7; }
+
+    @keyframes slideInRight { from { opacity:0; transform: translateX(10px); } to { opacity:1; transform: none; } }
+    @keyframes slideInLeft  { from { opacity:0; transform: translateX(-10px); } to { opacity:1; transform: none; } }
+
     .typing-dots span {
         display: inline-block;
-        width: 8px; height: 8px;
-        background-color: #94a3b8;
+        width: 6px; height: 6px;
+        background: var(--muted);
         border-radius: 50%;
-        margin: 0 2px;
         animation: bounce 1.2s infinite;
     }
     .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
     .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes bounce {
-        0%, 60%, 100% { transform: translateY(0); }
-        30% { transform: translateY(-8px); }
+    @keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
+
+    /* ── Zen Mode ── */
+    #zen-mode-overlay {
+        display: none; position: fixed; inset: 0;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+        z-index: 2000; flex-direction: column;
+        justify-content: center; align-items: center; color: white;
+    }
+    .zen-clock {
+        font-size: 7rem; font-weight: 800;
+        font-family: 'Courier New', monospace;
+        letter-spacing: -2px;
+        text-shadow: 0 0 40px rgba(59,130,246,0.4);
+    }
+    @media (max-width: 640px) { .zen-clock { font-size: 4.5rem; } }
+
+    /* ── Streak badge ── */
+    .streak-badge {
+        background: linear-gradient(135deg, #f59e0b, #f97316);
+        color: white;
+        font-weight: 700;
+        padding: 2px 10px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+    }
+
+    /* ── AI source badge ── */
+    .ai-badge {
+        font-size: 0.65rem;
+        background: linear-gradient(90deg,#10b981,#3b82f6);
+        color: white;
+        border-radius: 999px;
+        padding: 1px 8px;
+        vertical-align: middle;
+        margin-right: 4px;
     }
 </style>
-```
 
 </head>
-<body class="p-4 md:p-8">
+<body class="p-3 md:p-8">
 
-```
+<!-- Loading -->
+
 <div id="loading-overlay">
     <div class="spinner mb-4"></div>
-    <p class="text-blue-600 font-bold" id="loading-text">جاري إعداد بيئة الدراسة...</p>
+    <p class="text-blue-600 font-bold text-sm" id="loading-text">جاري تحضير بيئة الدراسة...</p>
 </div>
 
-<div id="login-section" class="max-w-md mx-auto mt-20 bg-white p-8 rounded-2xl shadow-xl text-center border-t-4 border-blue-600" style="display: none;">
-    <div class="mb-6 text-blue-600 text-5xl"><i class="fas fa-user-md"></i></div>
-    <h2 class="text-2xl font-bold mb-2 text-gray-800">خطة الـ 100% - الأطفال</h2>
-    <p class="text-gray-500 mb-8 text-sm">سجل دخولك لمتابعة خطتك، استخدام وضع التركيز العميق، والتحدث مع الأستاذ الذكي.</p>
-    <button onclick="loginWithGoogle()" class="w-full bg-white hover:bg-gray-50 text-gray-800 font-bold py-3 px-4 rounded-lg shadow border border-gray-300 flex justify-center items-center gap-3 transition-colors">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" alt="Google" class="w-5 h-5">
-        <span>تسجيل الدخول باستخدام Google</span>
+<!-- Login -->
+
+<div id="login-section" class="max-w-sm mx-auto mt-24 bg-white p-8 rounded-2xl shadow-xl text-center border-t-4 border-blue-600" style="display:none;">
+    <div class="mb-4 text-blue-600 text-5xl"><i class="fas fa-stethoscope"></i></div>
+    <h2 class="text-2xl font-bold mb-1 text-gray-800">خطة الـ 100% · أطفال</h2>
+    <p class="text-gray-400 mb-7 text-sm">سجّل دخولك لحفظ تقدّمك والتحدث مع المساعد الذكي.</p>
+    <button onclick="loginWithGoogle()"
+        class="w-full bg-white hover:bg-gray-50 text-gray-700 font-bold py-3 px-4 rounded-xl shadow border border-gray-200 flex justify-center items-center gap-3 transition-all hover:shadow-md">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" class="w-5 h-5">
+        تسجيل الدخول بـ Google
     </button>
 </div>
 
-<div id="main-content" class="max-w-4xl mx-auto" style="display: none;">
-    <header class="bg-blue-600 text-white rounded-2xl p-6 mb-8 shadow-lg text-center relative">
-        <button onclick="logoutUser()" class="absolute top-4 left-4 bg-white/20 hover:bg-white/30 text-white text-sm py-1 px-3 rounded-full transition-colors backdrop-blur-sm">
-            <i class="fas fa-sign-out-alt ml-1"></i> خروج
-        </button>
-        <div class="mt-4 text-sm text-blue-200 mb-2 flex justify-center items-center gap-2">
-            <img id="user-photo" src="" class="w-8 h-8 rounded-full border border-white" onerror="this.style.display='none'">
+<!-- Main -->
+
+<div id="main-content" class="max-w-4xl mx-auto" style="display:none;">
+
+```
+<!-- Header -->
+<header class="bg-gradient-to-l from-blue-700 to-blue-600 text-white rounded-2xl p-6 mb-6 shadow-lg relative overflow-hidden">
+    <div class="absolute inset-0 opacity-10" style="background-image:radial-gradient(circle at 20% 50%,#fff 1px,transparent 1px),radial-gradient(circle at 80% 20%,#fff 1px,transparent 1px); background-size:30px 30px;"></div>
+
+    <button onclick="logoutUser()"
+        class="absolute top-4 left-4 bg-white/20 hover:bg-white/30 text-white text-xs py-1.5 px-3 rounded-full transition-colors backdrop-blur-sm">
+        <i class="fas fa-sign-out-alt ml-1"></i> خروج
+    </button>
+
+    <div class="relative z-10">
+        <div class="text-xs text-blue-200 mb-3 flex justify-center items-center gap-2">
+            <img id="user-photo" src="" class="w-7 h-7 rounded-full border-2 border-white/50">
             <span id="display-name" class="font-semibold"></span>
+            <span id="streak-display" class="streak-badge hidden">🔥 <span id="streak-count">0</span> يوم متتالي</span>
         </div>
-        <h1 class="text-3xl font-bold mb-2"><i class="fas fa-stethoscope ml-2"></i> خطة الـ 10 أيام - Pediatrics</h1>
-        <p class="text-blue-100 text-lg">نظام (3-4-2) للعلامة الكاملة</p>
-        <div class="mt-6 bg-blue-800 rounded-full h-4 w-full overflow-hidden">
-            <div id="progress-fill" class="bg-green-400 h-full w-0 rounded-full"></div>
-        </div>
-        <p class="mt-2 text-sm font-semibold" id="progress-text">نسبة الإنجاز الكلية: 0%</p>
-    </header>
+        <h1 class="text-2xl md:text-3xl font-extrabold mb-1 text-center">
+            <i class="fas fa-stethoscope ml-2 opacity-80"></i>خطة الـ 10 أيام – Pediatrics
+        </h1>
+        <p class="text-blue-200 text-center text-sm mb-5">نظام (3-4-2) للعلامة الكاملة</p>
 
-    <!-- قسم المحادثة الذكية -->
-    <div class="bg-white rounded-2xl shadow-lg mb-8 border border-indigo-100 overflow-hidden flex flex-col">
-        <div class="bg-indigo-600 p-4 text-white flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="bg-white text-indigo-600 w-10 h-10 rounded-full flex justify-center items-center text-xl shadow-inner">
-                    <i class="fas fa-robot"></i>
-                </div>
-                <div>
-                    <h2 class="font-bold text-lg leading-tight">Gemini - أستاذ الأطفال</h2>
-                    <span class="text-xs text-indigo-200"><i class="fas fa-circle text-green-400 text-[10px] mr-1"></i>متصل الآن</span>
-                </div>
-            </div>
-            <button onclick="clearChat()" class="text-indigo-200 hover:text-white transition-colors" title="مسح المحادثة">
-                <i class="fas fa-trash-alt"></i>
-            </button>
+        <div class="bg-blue-800/50 rounded-full h-3.5 w-full overflow-hidden backdrop-blur-sm">
+            <div id="progress-fill" class="bg-emerald-400 h-full w-0 rounded-full shadow-sm"></div>
         </div>
-        
-        <div id="chat-box" class="chat-container h-80 overflow-y-auto p-4 flex flex-col gap-3 bg-slate-50">
-            <div class="msg-ai p-3 text-sm">
-                مرحباً د. محمد! أنا هنا لمساعدتك في الوصول لعلامة 100% في امتحان الأطفال. اسألني أي سؤال طبي، أو ارفع لي صورة لسؤال استصعبته من UWorld لأشرحه لك.
-            </div>
+        <div class="flex justify-between items-center mt-2 text-xs text-blue-200">
+            <span id="progress-text">نسبة الإنجاز: 0%</span>
+            <span id="tasks-count">0 / 0 مهمة</span>
         </div>
+    </div>
+</header>
 
-        <div class="bg-white p-3 border-t border-gray-200 flex items-end gap-2">
-            <input type="file" id="image-upload" accept="image/*" class="hidden" onchange="handleImageSelect(event)">
-            <button onclick="document.getElementById('image-upload').click()" class="text-gray-400 hover:text-indigo-600 p-2 transition-colors" title="إرفاق صورة">
-                <i class="fas fa-paperclip text-xl"></i>
-            </button>
-            <div class="flex-1 relative">
-                <div id="image-preview-container" class="hidden absolute bottom-full mb-2 left-0 bg-white border border-gray-200 p-1 rounded-lg shadow-md">
-                    <img id="image-preview" src="" class="h-16 rounded opacity-80">
-                    <button onclick="removeImage()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex justify-center items-center text-xs"><i class="fas fa-times"></i></button>
-                </div>
-                <textarea id="chat-input" rows="1" class="w-full bg-gray-100 border-transparent rounded-xl py-3 px-4 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 resize-none transition-all text-sm" placeholder="اكتب سؤالك هنا..."></textarea>
+<!-- Quick Stats -->
+<div class="grid grid-cols-3 gap-3 mb-6" id="stats-row">
+    <div class="bg-white rounded-xl p-3 text-center shadow-sm border border-gray-100">
+        <div class="text-2xl font-extrabold text-blue-600" id="stat-done">0</div>
+        <div class="text-xs text-gray-400 mt-0.5">مهمة منجزة</div>
+    </div>
+    <div class="bg-white rounded-xl p-3 text-center shadow-sm border border-gray-100">
+        <div class="text-2xl font-extrabold text-amber-500" id="stat-remain">0</div>
+        <div class="text-xs text-gray-400 mt-0.5">مهمة متبقية</div>
+    </div>
+    <div class="bg-white rounded-xl p-3 text-center shadow-sm border border-gray-100">
+        <div class="text-2xl font-extrabold text-emerald-500" id="stat-days">0</div>
+        <div class="text-xs text-gray-400 mt-0.5">أيام مكتملة</div>
+    </div>
+</div>
+
+<!-- AI Chat -->
+<div class="bg-white rounded-2xl shadow-md mb-6 border border-indigo-100 overflow-hidden flex flex-col">
+    <!-- Chat Header -->
+    <div class="bg-gradient-to-l from-indigo-700 to-indigo-600 p-4 text-white flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="bg-white text-indigo-600 w-10 h-10 rounded-full flex justify-center items-center text-xl shadow">
+                <i class="fas fa-robot"></i>
             </div>
-            <button onclick="sendChatMessage()" id="send-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl w-12 h-12 flex justify-center items-center transition-colors shadow-md flex-shrink-0">
-                <i class="fas fa-paper-plane"></i>
-            </button>
+            <div>
+                <h2 class="font-bold leading-tight flex items-center gap-1">
+                    <span>المساعد الذكي</span>
+                    <span class="ai-badge">Claude AI</span>
+                </h2>
+                <span class="text-xs text-indigo-200 flex items-center gap-1">
+                    <i class="fas fa-circle text-emerald-400 text-[8px]"></i>متصل الآن · أستاذ الأطفال
+                </span>
+            </div>
+        </div>
+        <button onclick="clearChat()" class="text-indigo-200 hover:text-white transition-colors p-1" title="مسح المحادثة">
+            <i class="fas fa-trash-alt"></i>
+        </button>
+    </div>
+
+    <!-- Suggestion Pills -->
+    <div class="flex gap-2 p-3 overflow-x-auto border-b border-gray-100 bg-indigo-50/40" id="suggestion-pills">
+        <button onclick="sendSuggestion('ما أهم نقاط Neonatal Jaundice؟')"
+            class="flex-shrink-0 text-xs bg-white border border-indigo-200 text-indigo-700 rounded-full px-3 py-1.5 hover:bg-indigo-50 transition-colors">
+            🍋 Neonatal Jaundice
+        </button>
+        <button onclick="sendSuggestion('خوارزمية علاج Asthma عند الأطفال؟')"
+            class="flex-shrink-0 text-xs bg-white border border-indigo-200 text-indigo-700 rounded-full px-3 py-1.5 hover:bg-indigo-50 transition-colors">
+            🫁 Asthma خوارزمية
+        </button>
+        <button onclick="sendSuggestion('الفرق بين Nephrotic و Nephritic syndrome؟')"
+            class="flex-shrink-0 text-xs bg-white border border-indigo-200 text-indigo-700 rounded-full px-3 py-1.5 hover:bg-indigo-50 transition-colors">
+            🫘 Nephrotic vs Nephritic
+        </button>
+        <button onclick="sendSuggestion('أهم علامات Kawasaki disease؟')"
+            class="flex-shrink-0 text-xs bg-white border border-indigo-200 text-indigo-700 rounded-full px-3 py-1.5 hover:bg-indigo-50 transition-colors">
+            🫀 Kawasaki
+        </button>
+    </div>
+
+    <!-- Messages -->
+    <div id="chat-box" class="chat-container h-72 overflow-y-auto p-4 flex flex-col gap-3 bg-slate-50">
+        <div class="msg-ai p-3 text-sm">
+            مرحباً د. محمد! 👋 أنا مساعدك الذكي لامتحان الأطفال. يمكنك سؤالي عن أي موضوع طبي، أو رفع صورة سؤال من UWorld لأشرحه لك بالتفصيل.
         </div>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="days-container"></div>
-    
-    <div class="mt-8 flex justify-center gap-4 mb-10">
-        <button onclick="resetProgress()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg transition-colors shadow-md text-sm">
-            <i class="fas fa-undo ml-2"></i> إعادة ضبط الخطة
+    <!-- Input Area -->
+    <div class="bg-white p-3 border-t border-gray-100 flex items-end gap-2">
+        <input type="file" id="image-upload" accept="image/*" class="hidden" onchange="handleImageSelect(event)">
+        <button onclick="document.getElementById('image-upload').click()"
+            class="text-gray-400 hover:text-indigo-600 p-2 transition-colors flex-shrink-0" title="إرفاق صورة">
+            <i class="fas fa-image text-lg"></i>
+        </button>
+        <div class="flex-1 relative">
+            <div id="image-preview-container" class="hidden absolute bottom-full mb-2 left-0 bg-white border border-gray-200 p-1.5 rounded-xl shadow-lg z-10">
+                <img id="image-preview" src="" class="h-16 rounded-lg">
+                <button onclick="removeImage()"
+                    class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex justify-center items-center text-xs shadow">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <textarea id="chat-input" rows="1"
+                class="w-full bg-gray-100 border border-transparent rounded-xl py-2.5 px-4 focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 resize-none transition-all text-sm"
+                placeholder="اكتب سؤالك هنا..."></textarea>
+        </div>
+        <button onclick="sendChatMessage()" id="send-btn"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl w-11 h-11 flex justify-center items-center transition-all shadow-md flex-shrink-0 hover:scale-105">
+            <i class="fas fa-paper-plane text-sm"></i>
         </button>
     </div>
 </div>
 
-<!-- شريط البومودورو -->
-<div id="pomodoro-bar" class="fixed bottom-0 left-0 w-full bg-slate-800 text-white p-3 flex justify-between items-center shadow-2xl z-50 cursor-pointer hover:bg-slate-700 transition-colors" onclick="openZenMode()" style="display: none;">
-    <div class="flex items-center gap-3">
-        <i class="fas fa-expand text-gray-400"></i>
-        <span class="font-bold">فتح وضع التركيز العميق (Zen Mode)</span>
-    </div>
-    <div class="text-xl font-mono font-bold" id="mini-timer">50:00</div>
+<!-- Days Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5" id="days-container"></div>
+
+<!-- Reset -->
+<div class="mt-8 flex justify-center mb-10">
+    <button onclick="resetProgress()"
+        class="bg-gray-100 hover:bg-red-50 text-gray-500 hover:text-red-500 border border-gray-200 hover:border-red-200 font-semibold py-2 px-6 rounded-xl transition-all text-sm">
+        <i class="fas fa-undo ml-2"></i> إعادة ضبط الخطة
+    </button>
+</div>
+```
+
 </div>
 
-<!-- Zen Mode -->
+<!-- Pomodoro Mini Bar -->
+
+<div id="pomodoro-bar"
+    class="fixed bottom-0 left-0 w-full bg-slate-900 text-white p-3 flex justify-between items-center shadow-2xl z-50 cursor-pointer hover:bg-slate-800 transition-colors"
+    onclick="openZenMode()" style="display:none;">
+    <div class="flex items-center gap-3">
+        <i class="fas fa-moon text-blue-400"></i>
+        <span class="font-semibold text-sm">وضع التركيز العميق</span>
+        <span class="text-xs text-slate-400 hidden sm:inline">اضغط للفتح</span>
+    </div>
+    <div class="flex items-center gap-3">
+        <span id="session-label" class="text-xs text-slate-400">جلسة تركيز</span>
+        <div class="text-lg font-mono font-bold text-blue-300" id="mini-timer">50:00</div>
+    </div>
+</div>
+
+<!-- Zen Mode Overlay -->
+
 <div id="zen-mode-overlay">
-    <button onclick="closeZenMode(event)" class="absolute top-8 right-8 text-white hover:text-red-400 text-4xl transition-colors">
+    <button onclick="closeZenMode(event)"
+        class="absolute top-6 right-6 text-slate-400 hover:text-red-400 text-3xl transition-colors">
         <i class="fas fa-times"></i>
     </button>
-    <div class="text-center mb-10">
-        <h2 class="text-2xl font-light text-gray-300 mb-2" id="zen-status">جلسة تركيز عميق</h2>
-        <div class="zen-clock" id="zen-timer">50:00</div>
+
+```
+<div class="text-center mb-8">
+    <h2 class="text-lg font-light text-slate-400 mb-1" id="zen-status">جلسة تركيز عميق</h2>
+    <div class="zen-clock text-blue-300" id="zen-timer">50:00</div>
+    <div class="mt-3 text-slate-500 text-sm" id="zen-sub">ركّز على ما أمامك</div>
+</div>
+
+<div class="flex gap-5 mb-10">
+    <button onclick="toggleZenTimer(event)" id="zen-play-btn"
+        class="w-18 h-18 w-20 h-20 bg-blue-600 hover:bg-blue-500 rounded-full flex justify-center items-center text-2xl shadow-[0_0_30px_rgba(59,130,246,0.4)] transition-all hover:scale-105">
+        <i class="fas fa-play ml-0.5" id="zen-icon"></i>
+    </button>
+    <button onclick="resetZenTimer(event)"
+        class="w-20 h-20 bg-slate-700 hover:bg-slate-600 rounded-full flex justify-center items-center text-xl transition-all hover:scale-105">
+        <i class="fas fa-sync-alt"></i>
+    </button>
+</div>
+
+<div class="bg-slate-800/60 p-5 rounded-2xl backdrop-blur-md border border-slate-700/50 flex flex-col items-center gap-4 w-72">
+    <div class="flex items-center gap-2 text-slate-300">
+        <i class="fas fa-headphones-alt text-blue-400"></i>
+        <span class="font-semibold">أصوات التركيز</span>
     </div>
-    <div class="flex gap-6 mb-12">
-        <button onclick="toggleZenTimer(event)" id="zen-play-btn" class="w-20 h-20 bg-blue-600 hover:bg-blue-500 rounded-full flex justify-center items-center text-3xl shadow-[0_0_20px_rgba(37,99,235,0.5)] transition-all transform hover:scale-105">
-            <i class="fas fa-play ml-1" id="zen-icon"></i>
-        </button>
-        <button onclick="resetZenTimer(event)" class="w-20 h-20 bg-slate-700 hover:bg-slate-600 rounded-full flex justify-center items-center text-2xl transition-all">
-            <i class="fas fa-sync-alt"></i>
-        </button>
+    <select id="audio-selector" onchange="changeAudio(event)"
+        class="bg-slate-900 border border-slate-600 text-white rounded-xl p-2.5 w-full focus:outline-none focus:border-blue-500 text-sm">
+        <option value="none">🔇 بدون صوت</option>
+        <option value="https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg">🌧️ مطر هادئ</option>
+        <option value="https://actions.google.com/sounds/v1/water/waves_crashing_on_rock_beach.ogg">🌊 أمواج البحر</option>
+        <option value="https://actions.google.com/sounds/v1/nature/forest_with_small_river.ogg">🌲 غابة ونهر</option>
+    </select>
+    <audio id="bg-audio" loop></audio>
+
+    <!-- Pomodoro Stats in Zen -->
+    <div class="text-center text-slate-400 text-xs border-t border-slate-700 pt-3 w-full">
+        <span>جلسات مكتملة اليوم: </span>
+        <span class="text-blue-400 font-bold" id="sessions-done">0</span>
     </div>
-    <div class="bg-slate-800/50 p-6 rounded-2xl backdrop-blur-md border border-slate-700 flex flex-col items-center">
-        <div class="flex items-center gap-3 mb-4">
-            <i class="fas fa-headphones-alt text-xl text-blue-400"></i>
-            <span class="font-semibold text-lg">الأصوات المحفزة للدراسة</span>
-        </div>
-        <select id="audio-selector" onchange="changeAudio(event)" class="bg-slate-900 border border-slate-600 text-white rounded-lg p-3 w-64 focus:outline-none focus:border-blue-500">
-            <option value="none">بدون صوت</option>
-            <option value="rain">🌧️ صوت المطر</option>
-            <option value="ocean">🌊 أمواج البحر</option>
-            <option value="forest">🌲 أجواء الغابة</option>
-            <option value="whitenoise">📻 White Noise</option>
-        </select>
-        <!-- لا audio tag — كل الأصوات تُولَّد بـ Web Audio API -->
-        <p id="audio-status" class="text-xs text-slate-400 mt-3 hidden">⚠️ لم يتمكن المتصفح من تشغيل الصوت.</p>
-    </div>
+</div>
+```
+
 </div>
 
 <script>
-    // ✅ Firebase Config
-    const firebaseConfig = {
-        apiKey: "AIzaSyCs-ho-vGUbUpPYd9WRlcAtdLxuRkvf5f4",
-        authDomain: "pediatrics-app.firebaseapp.com",
-        projectId: "pediatrics-app",
-        storageBucket: "pediatrics-app.firebasestorage.app",
-        messagingSenderId: "925584354091",
-        appId: "1:925584354091:web:508c47a0f5294d426bb36e",
-        measurementId: "G-H575VSQTJR"
-    };
-    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+/* ─────────────────────────────
+   Firebase Init
+───────────────────────────── */
+const firebaseConfig = {
+    apiKey: "AIzaSyCs-ho-vGUbUpPYd9WRlcAtdLxuRkvf5f4",
+    authDomain: "pediatrics-app.firebaseapp.com",
+    projectId: "pediatrics-app",
+    storageBucket: "pediatrics-app.firebasestorage.app",
+    messagingSenderId: "925584354091",
+    appId: "1:925584354091:web:508c47a0f5294d426bb36e"
+};
+if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
 
-    const planData = [
-        { date: "اليوم 1 (22/3)", title: "حجر الأساس والوقاية", tasks: ["3 ساعات (UW Notes): Growth & Dev، Nutrition، Vaccines، Child Abuse.", "4 ساعات (UWorld): Tutor/Unused - اختر General Principles و Psychiatry/Psychology.", "ساعتان مراجعة: حل 20 سؤال CMS أطفال قديم."] },
-        { date: "اليوم 2 (23/3)", title: "حديثي الولادة (أهم يوم)", tasks: ["3 ساعات (UW Notes): خوارزمية NRP، RDS vs TTN vs MAS، Jaundice، Sepsis.", "4 ساعات (UWorld): Tutor/Unused - اختر Pregnancy, Childbirth & Puerperium.", "ساعتان مراجعة: التركيز على Jaundice Charts وحل أخطاء اليوم."] },
-        { date: "اليوم 3 (24/3)", title: "الأمراض المعدية", tasks: ["3 ساعات (UW Notes): Meningitis، Viral Exanthems، Kawasaki، Bone infections.", "4 ساعات (UWorld): Tutor/Unused - اختر Infectious Diseases.", "ساعتان مراجعة: حل 20 سؤال CMS إضافي."] },
-        { date: "اليوم 4 (25/3)", title: "التنفسي والقلب", tasks: ["3 ساعات (UW Notes): Asthma, Bronchiolitis, Croup, CF | CHD (Cyanotic vs Acyanotic).", "4 ساعات (UWorld): Tutor/Unused - اختر Pulmonary & Critical Care و Cardiovascular.", "ساعتان مراجعة: مراجعة أصوات القلب (Murmurs) وأخطاء اليوم."] },
-        { date: "اليوم 5 (26/3)", title: "الجهاز الهضمي والتغذية", tasks: ["3 ساعات (UW Notes): Dehydration (حساب Deficit والسوائل)، Intussusception, Pyloric Stenosis.", "4 ساعات (UWorld): Tutor/Unused - اختر Gastrointestinal & Nutrition.", "ساعتان مراجعة: التدرب بورقة وقلم على مسائل السوائل (Maintenance & Deficit)."] },
-        { date: "اليوم 6 (27/3)", title: "الأعصاب والطب النفسي", tasks: ["3 ساعات (UW Notes): Seizures (Febrile vs Spasms)، CP، ADHD، Autism.", "4 ساعات (UWorld): Tutor/Unused - اختر Nervous System.", "ساعتان مراجعة: حل 20 سؤال CMS."] },
-        { date: "اليوم 7 (28/3)", title: "الدم والأورام والمناعة", tasks: ["3 ساعات (UW Notes): Anemias (الحديد vs ثلاسيميا)، Bleeding، Oncology، Immunodeficiencies.", "4 ساعات (UWorld): Tutor/Unused - اختر Hematology/Oncology و Immunology.", "ساعتان مراجعة: مراجعة صور خلايا الدم (Blood Film) من UWorld."] },
-        { date: "اليوم 8 (29/3)", title: "الكلى، الغدد، الجينات", tasks: ["3 ساعات (UW Notes): Nephrotic vs Nephritic, UTI | DKA، Hypothyroidism | Down, Turner.", "4 ساعات (UWorld): Tutor/Unused - اختر Renal, Endocrine و Genetics.", "ساعتان مراجعة: حل 20 سؤال CMS."] },
-        { date: "اليوم 9 (30/3)", title: "يوم المحاكاة الشاملة", tasks: ["المهمة 1 (ساعتان): حل 40 سؤال Incorrects من UWorld (Timed - جميع الأنظمة).", "المهمة 2 (ساعتان): حل نموذج CMS أطفال كامل (50 سؤال) تحت ضغط الوقت.", "المهمة 3 (الباقي): مراجعة الإجابات الخاطئة من CMS وأسئلة اليوم."] },
-        { date: "اليوم 10 (31/3)", title: "اللمسات الأخيرة (قبل الامتحان)", tasks: ["الصباح (3 ساعات): مراجعة سريعة للجداول والخوارزميات المعقدة.", "الظهر (ساعتان): تصفح سريع لجميع الصور (Images/Flashcards) في UWorld.", "المساء: راجع القوانين البسيطة (سوائل، APGAR) ونام مبكراً (8 ساعات)."] }
-    ];
+/* ─────────────────────────────
+   Plan Data
+───────────────────────────── */
+const planData = [
+    { date:"اليوم 1 (22/3)", title:"حجر الأساس والوقاية",     tasks:["3 ساعات (UW Notes): Growth & Dev، Nutrition، Vaccines، Child Abuse.","4 ساعات (UWorld): Tutor/Unused – اختر General Principles و Psychiatry/Psychology.","ساعتان مراجعة: حل 20 سؤال CMS أطفال قديم."] },
+    { date:"اليوم 2 (23/3)", title:"حديثو الولادة (أهم يوم)", tasks:["3 ساعات (UW Notes): خوارزمية NRP، RDS vs TTN vs MAS، Jaundice، Sepsis.","4 ساعات (UWorld): Tutor/Unused – اختر Pregnancy, Childbirth & Puerperium.","ساعتان مراجعة: التركيز على Jaundice Charts وحل أخطاء اليوم."] },
+    { date:"اليوم 3 (24/3)", title:"الأمراض المعدية",          tasks:["3 ساعات (UW Notes): Meningitis، Viral Exanthems، Kawasaki، Bone infections.","4 ساعات (UWorld): Tutor/Unused – اختر Infectious Diseases.","ساعتان مراجعة: حل 20 سؤال CMS إضافي."] },
+    { date:"اليوم 4 (25/3)", title:"التنفسي والقلب",           tasks:["3 ساعات (UW Notes): Asthma, Bronchiolitis, Croup, CF | CHD (Cyanotic vs Acyanotic).","4 ساعات (UWorld): Tutor/Unused – اختر Pulmonary & Critical Care و Cardiovascular.","ساعتان مراجعة: مراجعة أصوات القلب (Murmurs) وأخطاء اليوم."] },
+    { date:"اليوم 5 (26/3)", title:"الجهاز الهضمي والتغذية",   tasks:["3 ساعات (UW Notes): Dehydration (حساب Deficit والسوائل)، Intussusception, Pyloric Stenosis.","4 ساعات (UWorld): Tutor/Unused – اختر Gastrointestinal & Nutrition.","ساعتان مراجعة: التدرب بورقة وقلم على مسائل السوائل (Maintenance & Deficit)."] },
+    { date:"اليوم 6 (27/3)", title:"الأعصاب والطب النفسي",     tasks:["3 ساعات (UW Notes): Seizures (Febrile vs Spasms)، CP، ADHD، Autism.","4 ساعات (UWorld): Tutor/Unused – اختر Nervous System.","ساعتان مراجعة: حل 20 سؤال CMS."] },
+    { date:"اليوم 7 (28/3)", title:"الدم والأورام والمناعة",   tasks:["3 ساعات (UW Notes): Anemias (الحديد vs ثلاسيميا)، Bleeding، Oncology، Immunodeficiencies.","4 ساعات (UWorld): Tutor/Unused – اختر Hematology/Oncology و Immunology.","ساعتان مراجعة: مراجعة صور خلايا الدم (Blood Film) من UWorld."] },
+    { date:"اليوم 8 (29/3)", title:"الكلى والغدد والجينات",    tasks:["3 ساعات (UW Notes): Nephrotic vs Nephritic, UTI | DKA، Hypothyroidism | Down, Turner.","4 ساعات (UWorld): Tutor/Unused – اختر Renal, Endocrine و Genetics.","ساعتان مراجعة: حل 20 سؤال CMS."] },
+    { date:"اليوم 9 (30/3)", title:"يوم المحاكاة الشاملة",      tasks:["المهمة 1 (ساعتان): حل 40 سؤال Incorrects من UWorld (Timed – جميع الأنظمة).","المهمة 2 (ساعتان): حل نموذج CMS أطفال كامل (50 سؤال) تحت ضغط الوقت.","المهمة 3 (الباقي): مراجعة الإجابات الخاطئة من CMS وأسئلة اليوم."] },
+    { date:"اليوم 10 (31/3)", title:"اللمسات الأخيرة",         tasks:["الصباح (3 ساعات): مراجعة سريعة للجداول والخوارزميات المعقدة.","الظهر (ساعتان): تصفح سريع لجميع الصور (Images/Flashcards) في UWorld.","المساء: راجع القوانين البسيطة (سوائل، APGAR) ونام مبكراً (8 ساعات)."] }
+];
 
-    let currentUser = null;
-    let taskState = {};
+/* ─────────────────────────────
+   State
+───────────────────────────── */
+let currentUser = null;
+let taskState   = {};
+let chatHistory = [];
+let pendingImageBase64 = null;
+let pendingImageMime   = null;
+let sessionsDone = 0;
 
-    // ✅ الإصلاح الرئيسي: إزالة systemInstruction واستبداله بـ system message داخل contents
-    let chatHistory = [];
-    let pendingImageBase64 = null;
-    let pendingImageMime = null;
-
-    // ✅ المفتاح من Google AI Studio — تأكد من تفعيل "Generative Language API" في Google Cloud Console
-    const GEMINI_API_KEY = "AIzaSyB3gLTidHFKIkYzkLDPLs3aO_5Evw6JQhs";
-
-    // System prompt يُضاف كأول رسالة في المحادثة (الطريقة المدعومة)
-    const SYSTEM_PROMPT = "أنت أستاذ طب أطفال ومستشار أكاديمي خبير. تتحدث مع طالب طب في السنة السادسة يدعى محمد زهور، يطمح لعلامة 100% في امتحان الأطفال النظري. أجب باختصار وبشكل مباشر، قدم شرحاً سريرياً واضحاً بدون مقدمات طويلة. استخدم تنسيق النص الواضح مع النقاط عند الحاجة.";
-
-    let timerInterval;
-    let timeLeft = 50 * 60; 
-    let isTimerRunning = false;
-    let isStudySession = true;
-
-    // ✅ محرك الصوت بالكامل عبر Web Audio API — لا روابط خارجية، لا مشاكل CORS
-    let audioCtx = null;
-    let audioNodes = [];
-    let currentSoundType = 'none';
-
-    function getAudioCtx() {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        return audioCtx;
-    }
-
-    function stopAllAudio() {
-        audioNodes.forEach(n => { try { n.stop(); } catch(e){} });
-        audioNodes = [];
-    }
-
-    function createWhiteNoise(ctx, type) {
-        // Buffer ضجيج أبيض أو ملوَّن
-        const bufferSize = ctx.sampleRate * 4;
-        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
-        const src = ctx.createBufferSource();
-        src.buffer = buffer;
-        src.loop = true;
-        return src;
-    }
-
-    function playRain(ctx) {
-        // طبقتا ضجيج بترددات مختلفة تحاكي المطر
-        const master = ctx.createGain();
-        master.gain.value = 0.35;
-        master.connect(ctx.destination);
-
-        [0.8, 1.2].forEach(gainVal => {
-            const src = createWhiteNoise(ctx, 'rain');
-            const filter = ctx.createBiquadFilter();
-            filter.type = 'bandpass';
-            filter.frequency.value = 1200 + Math.random() * 400;
-            filter.Q.value = 0.5;
-            const g = ctx.createGain();
-            g.gain.value = gainVal;
-            src.connect(filter); filter.connect(g); g.connect(master);
-            src.start();
-            audioNodes.push(src);
-        });
-    }
-
-    function playOcean(ctx) {
-        const master = ctx.createGain();
-        master.gain.value = 0.4;
-        master.connect(ctx.destination);
-
-        // موجة بطيئة تصاعدية وتنازلية
-        const src = createWhiteNoise(ctx);
-        const filter = ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.value = 600;
-        const lfo = ctx.createOscillator();
-        lfo.frequency.value = 0.12;
-        const lfoGain = ctx.createGain();
-        lfoGain.gain.value = 0.25;
-        lfo.connect(lfoGain);
-        lfoGain.connect(master.gain);
-        lfo.start();
-        src.connect(filter); filter.connect(master);
-        src.start();
-        audioNodes.push(src, lfo);
-    }
-
-    function playForest(ctx) {
-        const master = ctx.createGain();
-        master.gain.value = 0.2;
-        master.connect(ctx.destination);
-
-        // خلفية خضراء هادئة
-        const src = createWhiteNoise(ctx);
-        const filter = ctx.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.value = 800;
-        filter.Q.value = 1.5;
-        src.connect(filter); filter.connect(master);
-        src.start();
-        audioNodes.push(src);
-
-        // تغريد طيور: نغمات عشوائية
-        function chirp() {
-            if (currentSoundType !== 'forest') return;
-            const osc = ctx.createOscillator();
-            const g = ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.value = 1800 + Math.random() * 1200;
-            g.gain.setValueAtTime(0, ctx.currentTime);
-            g.gain.linearRampToValueAtTime(0.15, ctx.currentTime + 0.05);
-            g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-            osc.connect(g); g.connect(ctx.destination);
-            osc.start(); osc.stop(ctx.currentTime + 0.35);
-            setTimeout(chirp, 1500 + Math.random() * 3000);
+/* ─────────────────────────────
+   Auth
+───────────────────────────── */
+auth.onAuthStateChanged(user => {
+    if (user) {
+        currentUser = user;
+        document.getElementById('display-name').innerText = user.displayName || user.email;
+        const photo = user.photoURL;
+        if (photo) {
+            const img = document.getElementById('user-photo');
+            img.src = photo;
+            img.style.display = 'block';
         }
-        setTimeout(chirp, 500);
+        document.getElementById('login-section').style.display = 'none';
+        loadUserData(user.uid);
+    } else {
+        currentUser = null;
+        document.getElementById('loading-overlay').style.display  = 'none';
+        document.getElementById('main-content').style.display     = 'none';
+        document.getElementById('pomodoro-bar').style.display     = 'none';
+        document.getElementById('login-section').style.display    = 'block';
     }
+});
 
-    function playWhiteNoise(ctx) {
-        const master = ctx.createGain();
-        master.gain.value = 0.3;
-        master.connect(ctx.destination);
-        const src = createWhiteNoise(ctx);
-        src.connect(master);
-        src.start();
-        audioNodes.push(src);
-    }
-
-    function startSound(type) {
-        stopAllAudio();
-        currentSoundType = type;
-        if (type === 'none') return;
-        const ctx = getAudioCtx();
-        if (ctx.state === 'suspended') ctx.resume();
-        if (type === 'rain')       playRain(ctx);
-        else if (type === 'ocean') playOcean(ctx);
-        else if (type === 'forest') playForest(ctx);
-        else if (type === 'whitenoise') playWhiteNoise(ctx);
-    }
-
-    function pauseSound() { stopAllAudio(); }
-
-    auth.onAuthStateChanged(user => {
-        if (user) {
-            currentUser = user;
-            document.getElementById('display-name').innerText = user.displayName || user.email;
-            const photo = document.getElementById('user-photo');
-            if (user.photoURL) { photo.src = user.photoURL; } else { photo.style.display = 'none'; }
-            document.getElementById('login-section').style.display = 'none';
-            loadUserData(user.uid);
-        } else {
-            currentUser = null;
-            document.getElementById('loading-overlay').style.display = 'none';
-            document.getElementById('main-content').style.display = 'none';
-            document.getElementById('pomodoro-bar').style.display = 'none';
-            document.getElementById('login-section').style.display = 'block';
-        }
+function loginWithGoogle() {
+    document.getElementById('loading-overlay').style.display = 'flex';
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider).catch(() => {
+        alert("تأكد من عدم حظر النوافذ المنبثقة.");
+        document.getElementById('loading-overlay').style.display = 'none';
     });
+}
 
-    function loginWithGoogle() {
-        document.getElementById('loading-overlay').style.display = 'flex';
-        const provider = new firebase.auth.GoogleAuthProvider();
-        auth.signInWithPopup(provider).catch(e => {
-            alert("يرجى التأكد من عدم حظر النوافذ المنبثقة.");
-            document.getElementById('loading-overlay').style.display = 'none';
-        });
-    }
+function logoutUser() { auth.signOut(); }
 
-    async function loadUserData(userId) {
-        document.getElementById('loading-overlay').style.display = 'flex';
-        try {
-            const doc = await db.collection("users").doc(userId).get();
-            if (doc.exists) { taskState = doc.data().tasks || {}; }
-        } catch (error) { console.error("Firestore error:", error); } 
-        finally {
-            renderDays();
-            updateProgress();
-            document.getElementById('main-content').style.display = 'block';
-            document.getElementById('pomodoro-bar').style.display = 'flex';
-            document.getElementById('loading-overlay').style.display = 'none';
+/* ─────────────────────────────
+   Load / Save
+───────────────────────────── */
+async function loadUserData(uid) {
+    document.getElementById('loading-overlay').style.display = 'flex';
+    try {
+        const doc = await db.collection("users").doc(uid).get();
+        if (doc.exists) {
+            const data = doc.data();
+            taskState    = data.tasks        || {};
+            sessionsDone = data.sessionsDone || 0;
         }
-    }
-
-    function renderDays() {
-        const container = document.getElementById('days-container');
-        container.innerHTML = ''; 
-        planData.forEach((day, dayIndex) => {
-            const dayCard = document.createElement('div');
-            dayCard.className = 'day-card bg-white rounded-xl shadow-md p-6 border-t-4 border-blue-500';
-            let tasksHtml = '';
-            day.tasks.forEach((task, taskIndex) => {
-                const taskId = `day${dayIndex}_task${taskIndex}`;
-                const isChecked = taskState[taskId] ? 'checked' : '';
-                tasksHtml += `
-                    <label class="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg cursor-pointer border-b border-gray-100 last:border-0 relative">
-                        <div class="mt-1 relative flex-shrink-0">
-                            <input type="checkbox" class="task-checkbox appearance-none w-6 h-6 border-2 border-gray-300 rounded-md checked:bg-green-500 checked:border-green-500 transition-colors cursor-pointer" 
-                                   id="${taskId}" ${isChecked} onchange="toggleTask('${taskId}')">
-                            <i class="fas fa-check text-white absolute top-1 right-1 text-sm pointer-events-none ${isChecked ? 'block' : 'hidden'}" id="icon_${taskId}"></i>
-                        </div>
-                        <div class="text-gray-700 font-medium text-sm leading-relaxed ${isChecked ? 'line-through text-gray-400' : ''}" id="text_${taskId}">${task}</div>
-                    </label>`;
-            });
-            dayCard.innerHTML = `<div class="flex justify-between items-center border-b pb-3 mb-4"><h2 class="text-xl font-bold text-gray-800">${day.date}</h2><span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">${day.title}</span></div><div class="space-y-1">${tasksHtml}</div>`;
-            container.appendChild(dayCard);
-        });
-    }
-
-    function toggleTask(taskId) {
-        const checkbox = document.getElementById(taskId);
-        const textElement = document.getElementById(`text_${taskId}`);
-        const iconElement = document.getElementById(`icon_${taskId}`);
-        taskState[taskId] = checkbox.checked;
-        if (checkbox.checked) {
-            textElement.classList.add('line-through', 'text-gray-400');
-            if(iconElement) iconElement.classList.replace('hidden','block');
-        } else {
-            textElement.classList.remove('line-through', 'text-gray-400');
-            if(iconElement) iconElement.classList.replace('block','hidden');
-        }
+    } catch(e) {}
+    finally {
+        renderDays();
         updateProgress();
-        if(currentUser) db.collection("users").doc(currentUser.uid).set({ tasks: taskState }, { merge: true });
+        document.getElementById('sessions-done').innerText = sessionsDone;
+        document.getElementById('main-content').style.display  = 'block';
+        document.getElementById('pomodoro-bar').style.display  = 'flex';
+        document.getElementById('loading-overlay').style.display = 'none';
     }
+}
 
-    function updateProgress() {
-        let totalTasks = 0; planData.forEach(d => totalTasks += d.tasks.length);
-        const completedTasks = Object.values(taskState).filter(v => v === true).length;
-        const percentage = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
-        document.getElementById('progress-fill').style.width = `${percentage}%`;
-        document.getElementById('progress-text').innerText = `نسبة الإنجاز: ${percentage}%`;
-    }
+function saveToFirestore() {
+    if (!currentUser) return;
+    db.collection("users").doc(currentUser.uid).set(
+        { tasks: taskState, sessionsDone },
+        { merge: true }
+    );
+}
 
-    // ✅ نظام المحادثة - تم إصلاح مشكلة API
-    function handleImageSelect(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            pendingImageBase64 = e.target.result.split(',')[1];
-            pendingImageMime = file.type;
-            document.getElementById('image-preview').src = e.target.result;
-            document.getElementById('image-preview-container').classList.remove('hidden');
-        };
-        reader.readAsDataURL(file);
-    }
+/* ─────────────────────────────
+   Render Days
+───────────────────────────── */
+function renderDays() {
+    const container = document.getElementById('days-container');
+    container.innerHTML = '';
+    planData.forEach((day, dayIndex) => {
+        const allDone = day.tasks.every((_, ti) => taskState[`day${dayIndex}_task${ti}`]);
+        const card = document.createElement('div');
+        card.className = `day-card bg-white rounded-xl shadow-sm p-5 border-r-4 ${allDone ? 'border-emerald-500' : 'border-blue-500'}`;
 
-    function removeImage() {
-        pendingImageBase64 = null;
-        pendingImageMime = null;
-        document.getElementById('image-preview-container').classList.add('hidden');
-        document.getElementById('image-upload').value = '';
-    }
+        let tasksHtml = '';
+        day.tasks.forEach((task, ti) => {
+            const id      = `day${dayIndex}_task${ti}`;
+            const checked = taskState[id] ? 'checked' : '';
+            tasksHtml += `
+            <label class="flex items-start gap-3 p-2.5 hover:bg-gray-50 rounded-lg cursor-pointer group">
+                <div class="mt-0.5 relative flex-shrink-0">
+                    <input type="checkbox" class="task-checkbox appearance-none w-5 h-5 border-2 border-gray-300
+                        rounded-md checked:bg-emerald-500 checked:border-emerald-500 transition-colors cursor-pointer"
+                        id="${id}" ${checked} onchange="toggleTask('${id}')">
+                    <i class="fas fa-check text-white absolute top-0.5 right-0.5 text-[10px] pointer-events-none ${checked ? '' : 'hidden'}" id="icon_${id}"></i>
+                </div>
+                <div class="task-label text-gray-700 text-sm leading-relaxed ${checked ? 'line-through text-gray-400' : ''}" id="text_${id}">${task}</div>
+            </label>`;
+        });
 
-    function appendMessage(text, isUser, imageBase64 = null, imageMime = null) {
-        const box = document.getElementById('chat-box');
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `p-3 text-sm ${isUser ? 'msg-user' : 'msg-ai'}`;
-        let content = '';
-        if (imageBase64) {
-            content += `<img src="data:${imageMime};base64,${imageBase64}" class="w-48 rounded mb-2 border border-white/20"><br>`;
-        }
-        content += text;
-        msgDiv.innerHTML = content;
-        box.appendChild(msgDiv);
-        box.scrollTop = box.scrollHeight;
-        return msgDiv;
-    }
-
-    function showTypingIndicator() {
-        const box = document.getElementById('chat-box');
-        const div = document.createElement('div');
-        div.className = 'msg-ai p-3 text-sm';
-        div.id = 'typing-indicator';
-        div.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
-        box.appendChild(div);
-        box.scrollTop = box.scrollHeight;
-    }
-
-    function removeTypingIndicator() {
-        const el = document.getElementById('typing-indicator');
-        if (el) el.remove();
-    }
-
-    function clearChat() {
-        if(confirm("هل تريد مسح المحادثة بالكامل؟")) {
-            chatHistory = [];
-            document.getElementById('chat-box').innerHTML = `<div class="msg-ai p-3 text-sm">تم مسح الذاكرة. كيف يمكنني مساعدتك الآن؟</div>`;
-        }
-    }
-
-    async function sendChatMessage() {
-        const inputField = document.getElementById('chat-input');
-        const text = inputField.value.trim();
-        const btn = document.getElementById('send-btn');
-        if (!text && !pendingImageBase64) return;
-
-        // عرض رسالة المستخدم
-        const imgB64 = pendingImageBase64;
-        const imgMime = pendingImageMime;
-        appendMessage(text, true, imgB64, imgMime);
-        inputField.value = '';
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        btn.disabled = true;
-
-        // بناء أجزاء الرسالة
-        let userParts = [];
-        if (text) userParts.push({ text });
-        if (imgB64) userParts.push({ inlineData: { data: imgB64, mimeType: imgMime } });
-        removeImage();
-
-        // ✅ الإصلاح: إضافة system prompt كأول رسالة إذا كانت المحادثة فارغة
-        if (chatHistory.length === 0) {
-            chatHistory.push({ role: "user", parts: [{ text: SYSTEM_PROMPT }] });
-            chatHistory.push({ role: "model", parts: [{ text: "فهمت. أنا جاهز لمساعدة د. محمد في الوصول للعلامة الكاملة في امتحان الأطفال." }] });
-        }
-
-        chatHistory.push({ role: "user", parts: userParts });
-        showTypingIndicator();
-
-        try {
-            const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: chatHistory })
-                }
-            );
-
-            const data = await response.json();
-            removeTypingIndicator();
-
-            if (data.error) {
-                let errMsg = data.error.message || "خطأ غير معروف";
-                // رسالة توجيهية واضحة عند خطأ المفتاح
-                if (errMsg.includes("API key not valid") || errMsg.includes("API_KEY_INVALID")) {
-                    errMsg = `❌ المفتاح غير صالح.<br><br>` +
-                        `<b>الحل:</b> افتح <a href="https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com" target="_blank" style="color:#818cf8;text-decoration:underline">Google Cloud Console</a> ` +
-                        `وفعّل خدمة <b>Generative Language API</b> للمشروع رقم <b>57431869431</b> ثم حاول مجدداً.`;
-                }
-                appendMessage(errMsg, false);
-                chatHistory.pop();
-            } else if (data.candidates && data.candidates.length > 0) {
-                let aiText = data.candidates[0].content.parts[0].text;
-                chatHistory.push({ role: "model", parts: [{ text: aiText }] });
-                // تنسيق الرد
-                aiText = aiText
-                    .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
-                    .replace(/\*(.*?)\*/g, '<i>$1</i>')
-                    .replace(/\n/g, '<br>');
-                appendMessage(aiText, false);
-            } else {
-                appendMessage("⚠️ لم يأتِ رد من الخادم. حاول مجدداً.", false);
-                chatHistory.pop();
-            }
-        } catch (error) {
-            removeTypingIndicator();
-            console.error("API Error:", error);
-            appendMessage("❌ تعذر الاتصال. تأكد من جودة الإنترنت وحاول مجدداً.", false);
-            chatHistory.pop();
-        }
-
-        btn.innerHTML = '<i class="fas fa-paper-plane"></i>';
-        btn.disabled = false;
-    }
-
-    document.getElementById('chat-input').addEventListener('keypress', function (e) {
-        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); }
+        const doneCount = day.tasks.filter((_, ti) => taskState[`day${dayIndex}_task${ti}`]).length;
+        card.innerHTML = `
+            <div class="flex justify-between items-start mb-3">
+                <div>
+                    <h2 class="font-bold text-gray-800 text-base">${day.date}</h2>
+                    <span class="text-xs text-gray-500">${day.title}</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    ${allDone ? '<span class="text-emerald-500 text-lg">✅</span>' : ''}
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded-full ${allDone ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}">
+                        ${doneCount}/${day.tasks.length}
+                    </span>
+                </div>
+            </div>
+            <div class="space-y-0.5">${tasksHtml}</div>`;
+        container.appendChild(card);
     });
+}
 
-    // --- Zen Mode ---
-    function openZenMode() { document.getElementById('zen-mode-overlay').style.display = 'flex'; }
-    function closeZenMode(e) { e.stopPropagation(); document.getElementById('zen-mode-overlay').style.display = 'none'; }
-
-    function updateZenDisplay() {
-        const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
-        const s = (timeLeft % 60).toString().padStart(2, '0');
-        const timeStr = `${m}:${s}`;
-        document.getElementById('zen-timer').innerText = timeStr;
-        document.getElementById('mini-timer').innerText = timeStr;
+/* ─────────────────────────────
+   Toggle Task
+───────────────────────────── */
+function toggleTask(id) {
+    const cb   = document.getElementById(id);
+    const text = document.getElementById(`text_${id}`);
+    const icon = document.getElementById(`icon_${id}`);
+    taskState[id] = cb.checked;
+    if (cb.checked) {
+        text.classList.add('line-through','text-gray-400');
+        icon.classList.remove('hidden');
+    } else {
+        text.classList.remove('line-through','text-gray-400');
+        icon.classList.add('hidden');
     }
+    updateProgress();
+    // re-render cards to update badge colors
+    renderDays();
+    saveToFirestore();
+}
 
-    function toggleZenTimer(e) {
-        e.stopPropagation();
-        const icon = document.getElementById('zen-icon');
-        const btn = document.getElementById('zen-play-btn');
-        if (isTimerRunning) {
-            clearInterval(timerInterval);
-            icon.className = "fas fa-play ml-1";
-            btn.classList.replace('bg-yellow-600', 'bg-blue-600');
-            btn.classList.replace('hover:bg-yellow-500', 'hover:bg-blue-500');
-            if(!isTimerRunning) pauseSound();
+/* ─────────────────────────────
+   Progress
+───────────────────────────── */
+function updateProgress() {
+    let total = 0;
+    planData.forEach(d => total += d.tasks.length);
+    const done = Object.values(taskState).filter(v => v === true).length;
+    const pct  = total === 0 ? 0 : Math.round((done / total) * 100);
+    document.getElementById('progress-fill').style.width = `${pct}%`;
+    document.getElementById('progress-text').innerText   = `نسبة الإنجاز: ${pct}%`;
+    document.getElementById('tasks-count').innerText     = `${done} / ${total} مهمة`;
+    document.getElementById('stat-done').innerText    = done;
+    document.getElementById('stat-remain').innerText  = total - done;
+    // count fully completed days
+    let completedDays = 0;
+    planData.forEach((day, di) => {
+        if (day.tasks.every((_, ti) => taskState[`day${di}_task${ti}`])) completedDays++;
+    });
+    document.getElementById('stat-days').innerText = completedDays;
+}
+
+/* ─────────────────────────────
+   Reset
+───────────────────────────── */
+async function resetProgress() {
+    if (!confirm("هل أنت متأكد من إعادة ضبط الخطة بالكامل؟")) return;
+    taskState = {};
+    renderDays();
+    updateProgress();
+    saveToFirestore();
+}
+
+/* ─────────────────────────────
+   Chat – Claude API
+───────────────────────────── */
+const SYSTEM_PROMPT = `أنت أستاذ طب أطفال خبير ومستشار أكاديمي. تتحدث مع طالب طب في السنة السادسة يدعى محمد يطمح لعلامة 100% في امتحان الأطفال النظري.
+أجب باختصار دقيق، قدّم معلومات سريرية مباشرة بدون مقدمات. عند شرح الأمراض استخدم نمط: التعريف → الأعراض → التشخيص → العلاج.
+استخدم الرموز التعبيرية لتوضيح النقاط الرئيسية واجعل ردودك سهلة المراجعة.`;
+
+function appendMessage(html, isUser) {
+    const box = document.getElementById('chat-box');
+    const div = document.createElement('div');
+    div.className = `p-3 text-sm ${isUser ? 'msg-user' : 'msg-ai'}`;
+    div.innerHTML = html;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+    return div;
+}
+
+function showTyping() {
+    const box = document.getElementById('chat-box');
+    const div = document.createElement('div');
+    div.className = 'msg-ai p-3 text-sm thinking';
+    div.id = 'typing-indicator';
+    div.innerHTML = `<div class="typing-dots"><span></span><span></span><span></span></div>`;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+}
+
+function removeTyping() {
+    const el = document.getElementById('typing-indicator');
+    if (el) el.remove();
+}
+
+function handleImageSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        pendingImageBase64 = e.target.result.split(',')[1];
+        pendingImageMime   = file.type;
+        document.getElementById('image-preview').src = e.target.result;
+        document.getElementById('image-preview-container').classList.remove('hidden');
+    };
+    reader.readAsDataURL(file);
+}
+
+function removeImage() {
+    pendingImageBase64 = null;
+    pendingImageMime   = null;
+    document.getElementById('image-preview-container').classList.add('hidden');
+    document.getElementById('image-upload').value = '';
+}
+
+function clearChat() {
+    if (!confirm("مسح المحادثة؟")) return;
+    chatHistory = [];
+    document.getElementById('chat-box').innerHTML =
+        `<div class="msg-ai p-3 text-sm">تم مسح المحادثة. كيف يمكنني مساعدتك الآن؟</div>`;
+}
+
+async function sendSuggestion(text) {
+    document.getElementById('chat-input').value = text;
+    await sendChatMessage();
+}
+
+async function sendChatMessage() {
+    const input = document.getElementById('chat-input');
+    const btn   = document.getElementById('send-btn');
+    const text  = input.value.trim();
+    if (!text && !pendingImageBase64) return;
+
+    // Show user message
+    let userHtml = '';
+    if (pendingImageBase64) {
+        userHtml += `<img src="data:${pendingImageMime};base64,${pendingImageBase64}" class="w-40 rounded-lg mb-2 border border-white/20 block">`;
+    }
+    if (text) userHtml += `<span>${text}</span>`;
+    appendMessage(userHtml, true);
+    input.value = '';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin text-sm"></i>';
+    btn.disabled = true;
+
+    // Build message content
+    const userContent = [];
+    if (pendingImageBase64) {
+        userContent.push({ type: "image", source: { type: "base64", media_type: pendingImageMime, data: pendingImageBase64 } });
+    }
+    if (text) userContent.push({ type: "text", text });
+    chatHistory.push({ role: "user", content: userContent });
+    removeImage();
+
+    showTyping();
+
+    try {
+        const resp = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                model: "claude-sonnet-4-20250514",
+                max_tokens: 1000,
+                system: SYSTEM_PROMPT,
+                messages: chatHistory
+            })
+        });
+
+        const data = await resp.json();
+        removeTyping();
+
+        if (data.error) {
+            appendMessage(`❌ خطأ: ${data.error.message}`, false);
+            chatHistory.pop();
         } else {
-            icon.className = "fas fa-pause";
-            btn.classList.replace('bg-blue-600', 'bg-yellow-600');
-            btn.classList.replace('hover:bg-blue-500', 'hover:bg-yellow-500');
-            const selectedAudio = document.getElementById('audio-selector').value;
-            if (selectedAudio !== 'none') { startSound(selectedAudio); }
-            timerInterval = setInterval(() => {
-                timeLeft--;
-                updateZenDisplay();
-                if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    isTimerRunning = false;
-                    icon.className = "fas fa-play ml-1";
-                    btn.classList.replace('bg-yellow-600', 'bg-blue-600');
-                    if (isStudySession) {
-                        alert("🏆 انتهت جلسة التركيز العميق! خذ 10 دقائق راحة بعيداً عن الشاشة.");
-                        isStudySession = false;
-                        timeLeft = 10 * 60;
-                        document.getElementById('zen-status').innerText = "وقت الاسترخاء";
-                    } else {
-                        alert("⏰ انتهت الراحة. لنعد إلى التركيز نحو العلامة الكاملة!");
-                        isStudySession = true;
-                        timeLeft = 50 * 60;
-                        document.getElementById('zen-status').innerText = "جلسة تركيز عميق";
-                    }
-                    updateZenDisplay();
-                }
-            }, 1000);
+            const aiText = data.content.map(b => b.text || '').join('');
+            chatHistory.push({ role: "assistant", content: aiText });
+            const formatted = aiText
+                .replace(/\n/g, '<br>')
+                .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+                .replace(/\*(.*?)\*/g, '<i>$1</i>');
+            appendMessage(formatted, false);
         }
-        isTimerRunning = !isTimerRunning;
+    } catch (err) {
+        removeTyping();
+        appendMessage("❌ تعذّر الاتصال. تحقق من الإنترنت وأعد المحاولة.", false);
+        chatHistory.pop();
     }
 
-    function resetZenTimer(e) {
-        e.stopPropagation();
+    btn.innerHTML = '<i class="fas fa-paper-plane text-sm"></i>';
+    btn.disabled = false;
+}
+
+document.getElementById('chat-input').addEventListener('keypress', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); }
+});
+
+/* ─────────────────────────────
+   Zen / Pomodoro
+───────────────────────────── */
+let timerInterval, timeLeft = 50*60, isTimerRunning = false, isStudySession = true;
+const bgAudio = document.getElementById('bg-audio');
+
+function openZenMode()    { document.getElementById('zen-mode-overlay').style.display = 'flex'; }
+function closeZenMode(e)  { e.stopPropagation(); document.getElementById('zen-mode-overlay').style.display = 'none'; }
+
+function updateZenDisplay() {
+    const m = String(Math.floor(timeLeft/60)).padStart(2,'0');
+    const s = String(timeLeft % 60).padStart(2,'0');
+    const t = `${m}:${s}`;
+    document.getElementById('zen-timer').innerText  = t;
+    document.getElementById('mini-timer').innerText = t;
+}
+
+function toggleZenTimer(e) {
+    e.stopPropagation();
+    const icon = document.getElementById('zen-icon');
+    const btn  = document.getElementById('zen-play-btn');
+
+    if (isTimerRunning) {
         clearInterval(timerInterval);
-        isTimerRunning = false;
-        isStudySession = true;
-        timeLeft = 50 * 60;
-        updateZenDisplay();
-        document.getElementById('zen-icon').className = "fas fa-play ml-1";
-        const btn = document.getElementById('zen-play-btn');
-        btn.classList.replace('bg-yellow-600', 'bg-blue-600');
-        btn.classList.replace('hover:bg-yellow-500', 'hover:bg-blue-500');
-        document.getElementById('zen-status').innerText = "جلسة تركيز عميق";
-        pauseSound();
-    }
+        icon.className = 'fas fa-play ml-0.5';
+        btn.classList.replace('bg-amber-600','bg-blue-600');
+        btn.classList.replace('hover:bg-amber-500','hover:bg-blue-500');
+        if (!bgAudio.paused) bgAudio.pause();
+    } else {
+        icon.className = 'fas fa-pause';
+        btn.classList.replace('bg-blue-600','bg-amber-600');
+        btn.classList.replace('hover:bg-blue-500','hover:bg-amber-500');
+        const sel = document.getElementById('audio-selector').value;
+        if (sel !== 'none' && bgAudio.paused) bgAudio.play().catch(()=>{});
 
-    function changeAudio(e) {
-        const type = e.target.value;
-        currentSoundType = type;
-        if (isTimerRunning) {
-            startSound(type);
-        } else {
-            pauseSound();
-        }
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            updateZenDisplay();
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                isTimerRunning = false;
+                icon.className = 'fas fa-play ml-0.5';
+                btn.classList.replace('bg-amber-600','bg-blue-600');
+                if (isStudySession) {
+                    sessionsDone++;
+                    document.getElementById('sessions-done').innerText = sessionsDone;
+                    saveToFirestore();
+                    alert("🏆 انتهت جلسة التركيز! خذ 10 دقائق راحة.");
+                    isStudySession = false;
+                    timeLeft = 10*60;
+                    document.getElementById('zen-status').innerText = "وقت الراحة";
+                    document.getElementById('session-label').innerText = "وقت راحة";
+                } else {
+                    alert("⏰ انتهت الراحة. لنعود للمذاكرة!");
+                    isStudySession = true;
+                    timeLeft = 50*60;
+                    document.getElementById('zen-status').innerText = "جلسة تركيز عميق";
+                    document.getElementById('session-label').innerText = "جلسة تركيز";
+                }
+                updateZenDisplay();
+            }
+        }, 1000);
     }
+    isTimerRunning = !isTimerRunning;
+}
 
-    async function resetProgress() {
-        if(confirm("هل أنت متأكد من إعادة ضبط الخطة؟")) {
-            taskState = {};
-            renderDays(); updateProgress();
-            if(currentUser) db.collection("users").doc(currentUser.uid).set({ tasks: taskState }, { merge: true });
-        }
-    }
+function resetZenTimer(e) {
+    e.stopPropagation();
+    clearInterval(timerInterval);
+    isTimerRunning = false; isStudySession = true; timeLeft = 50*60;
+    updateZenDisplay();
+    document.getElementById('zen-icon').className   = 'fas fa-play ml-0.5';
+    const btn = document.getElementById('zen-play-btn');
+    btn.className = btn.className.replace('bg-amber-600','bg-blue-600').replace('hover:bg-amber-500','hover:bg-blue-500');
+    document.getElementById('zen-status').innerText    = 'جلسة تركيز عميق';
+    document.getElementById('session-label').innerText = 'جلسة تركيز';
+    bgAudio.pause();
+}
 
-    function logoutUser() { auth.signOut(); }
+function changeAudio(e) {
+    const url = e.target.value;
+    if (url === 'none') { bgAudio.pause(); bgAudio.src = ''; }
+    else { bgAudio.src = url; if (isTimerRunning) bgAudio.play().catch(()=>{}); }
+}
 </script>
-```
 
 </body>
 </html>
